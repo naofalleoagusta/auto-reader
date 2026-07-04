@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { FontFamilyOption, FontSettings, ThemeMode } from '../types/reader'
 
 interface CommandPaletteProps {
@@ -19,7 +20,9 @@ const THEMES: { value: ThemeMode; label: string }[] = [
   { value: 'deep-dark', label: 'DARK' },
 ]
 
-export function CommandPalette({
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60'
+
+export const CommandPalette = memo(function CommandPalette({
   isOpen,
   onClose,
   theme,
@@ -52,7 +55,7 @@ export function CommandPalette({
                 key={value}
                 type="button"
                 onClick={() => onThemeChange(value)}
-                className={`border px-2 py-2 text-[11px] tracking-wider transition-colors ${
+                className={`border px-2 py-2 text-[11px] tracking-wider transition-colors ${FOCUS_RING} ${
                   theme === value
                     ? 'border-accent text-accent'
                     : 'border-line text-muted hover:border-accent/50 hover:text-ink'
@@ -72,7 +75,7 @@ export function CommandPalette({
                 key={option}
                 type="button"
                 onClick={() => onFontFamilyChange(option)}
-                className={`border px-2 py-2 text-[11px] tracking-wider uppercase transition-colors ${
+                className={`border px-2 py-2 text-[11px] tracking-wider uppercase transition-colors ${FOCUS_RING} ${
                   font.fontFamily === option
                     ? 'border-accent text-accent'
                     : 'border-line text-muted hover:border-accent/50 hover:text-ink'
@@ -93,7 +96,7 @@ export function CommandPalette({
               max={28}
               value={font.fontSize}
               onChange={(e) => onFontSizeChange(Number(e.target.value))}
-              className="accent-[var(--color-accent)]"
+              className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
           <label className="flex flex-col gap-1.5 text-[11px] tracking-wider text-muted">
@@ -105,7 +108,7 @@ export function CommandPalette({
               step={0.1}
               value={font.lineHeight}
               onChange={(e) => onLineHeightChange(Number(e.target.value))}
-              className="accent-[var(--color-accent)]"
+              className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
           <label className="flex flex-col gap-1.5 text-[11px] tracking-wider text-muted">
@@ -117,11 +120,11 @@ export function CommandPalette({
               step={10}
               value={readingSpeedWpm}
               onChange={(e) => onSpeedChange(Number(e.target.value))}
-              className="accent-[var(--color-accent)]"
+              className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
         </section>
       </div>
     </div>
   )
-}
+})

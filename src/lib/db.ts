@@ -6,8 +6,15 @@ const DB_VERSION = 1
 const BOOKS_STORE = 'books'
 const LIBRARY_STORE = 'library'
 
+// Cached across calls — opening a fresh IndexedDB connection per operation
+// (this fires on every block advance plus throttled word-index writes during
+// playback) adds needless per-call overhead. Reset on failure so a transient
+// error doesn't permanently wedge every future call behind a rejected promise.
+let dbPromise: Promise<IDBDatabase> | null = null
+
 function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise
+  dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
@@ -15,8 +22,12 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(LIBRARY_STORE)) db.createObjectStore(LIBRARY_STORE, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
+    request.onerror = () => {
+      dbPromise = null
+      reject(request.error)
+    }
   })
+  return dbPromise
 }
 
 async function withStore<T>(
@@ -73,17 +84,31 @@ export async function getBook(id: string): Promise<Book | null> {
   return book ?? null
 }
 
-export async function updateLastPosition(
-  id: string,
-  position: ReadingPosition,
-  wordIndex = 0,
-): Promise<void> {
-  const entry = await getLibraryEntry(id)
-  if (!entry) return
-  entry.lastPosition = position
-  entry.lastWordIndex = wordIndex
-  entry.lastOpenedAt = Date.now()
-  await withStore<IDBValidKey>(LIBRARY_STORE, 'readwrite', (store) => store.put(entry))
+/** Single readwrite transaction for the get-then-put, instead of a separate
+ * read transaction (getLibraryEntry) followed by a separate write one — this
+ * fires often (every block advance, throttled word-index writes) so halving
+ * the transaction count per call is a real, not just cosmetic, saving. */
+export async function updateLastPosition(id: string, position: ReadingPosition, wordIndex = 0): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LIBRARY_STORE, 'readwrite')
+    const store = tx.objectStore(LIBRARY_STORE)
+    const getRequest = store.get(id)
+    getRequest.onsuccess = () => {
+      const entry = getRequest.result as LibraryEntry | undefined
+      if (!entry) {
+        resolve()
+        return
+      }
+      entry.lastPosition = position
+      entry.lastWordIndex = wordIndex
+      entry.lastOpenedAt = Date.now()
+      const putRequest = store.put(entry)
+      putRequest.onsuccess = () => resolve()
+      putRequest.onerror = () => reject(putRequest.error)
+    }
+    getRequest.onerror = () => reject(getRequest.error)
+  })
 }
 
 export async function deleteBook(id: string): Promise<void> {

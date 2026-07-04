@@ -71,7 +71,7 @@ export function DropZone({ onFileAccepted, accept, isLoading, progress, error, c
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="border border-line px-4 py-2 font-mono text-[11px] tracking-wider text-ink transition-colors hover:border-accent hover:text-accent"
+            className="border border-line px-4 py-2 font-mono text-[11px] tracking-wider text-ink transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
           >
             BROWSE FILES
           </button>

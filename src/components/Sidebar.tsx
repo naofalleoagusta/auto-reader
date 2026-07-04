@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Book, LibraryEntry } from '../types/book'
 
 interface SidebarProps {
@@ -11,7 +12,7 @@ interface SidebarProps {
   onSelectLibraryBook: (id: string) => void
 }
 
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   isOpen,
   onClose,
   book,
@@ -39,7 +40,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={onClose}
-            className="text-muted transition-colors hover:text-ink lg:hidden"
+            className="text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 lg:hidden"
             aria-label="Close sidebar"
           >
             <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
@@ -51,7 +52,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={onRequestOpenFile}
-          className="mx-4 mt-3 mb-4 border border-line px-3 py-2 text-left text-[11px] tracking-wider text-muted transition-colors hover:border-accent hover:text-accent"
+          className="mx-4 mt-3 mb-4 border border-line px-3 py-2 text-left text-[11px] tracking-wider text-muted transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
         >
           + OPEN FILE
         </button>
@@ -67,7 +68,7 @@ export function Sidebar({
                     key={entry.id}
                     type="button"
                     onClick={() => onSelectLibraryBook(entry.id)}
-                    className={`flex flex-col gap-0.5 border-l-2 px-4 py-1.5 text-left transition-colors ${
+                    className={`flex flex-col gap-0.5 border-l-2 px-4 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                       isActive
                         ? 'border-accent bg-canvas'
                         : 'border-transparent hover:border-line hover:bg-canvas/60'
@@ -99,7 +100,7 @@ export function Sidebar({
                       key={chapter.id}
                       type="button"
                       onClick={() => onSelectChapter(index)}
-                      className={`flex items-baseline gap-3 border-l-2 px-4 py-2 text-left text-[13px] transition-colors ${
+                      className={`flex items-baseline gap-3 border-l-2 px-4 py-2 text-left text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                         isActive
                           ? 'border-accent bg-canvas text-accent'
                           : 'border-transparent text-muted hover:border-line hover:text-ink'
@@ -121,4 +122,4 @@ export function Sidebar({
       </aside>
     </>
   )
-}
+})

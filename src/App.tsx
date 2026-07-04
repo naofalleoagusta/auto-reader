@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useReaderState } from './state/useReaderState'
 import { useAutoAdvance } from './hooks/useAutoAdvance'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -113,6 +113,39 @@ export default function App() {
 
   const chapter = book?.chapters[position.chapterIndex]
 
+  // Stabilized so Sidebar/ControlBar/CommandPalette (all React.memo) and
+  // ReaderCanvas's per-block memoization actually skip re-rendering on the
+  // frequent currentWordIndex ticks — inline arrow props would defeat memo
+  // every time regardless of whether anything visually changed.
+  const handleCloseSidebar = useCallback(() => setSidebarOpen(false), [setSidebarOpen])
+  const handleSelectChapter = useCallback(
+    (chapterIndex: number) => setPosition({ chapterIndex, blockIndex: 0 }),
+    [setPosition],
+  )
+  const handleRequestOpenFile = useCallback(() => fileInputRef.current?.click(), [])
+  const handleSelectLibraryBook = useCallback(
+    (id: string) => {
+      void openBookFromLibrary(id)
+      setSidebarOpen(true)
+    },
+    [openBookFromLibrary, setSidebarOpen],
+  )
+  const handleOpenCommandPalette = useCallback(() => setCommandPaletteOpen(true), [setCommandPaletteOpen])
+  const handleCloseCommandPalette = useCallback(() => setCommandPaletteOpen(false), [setCommandPaletteOpen])
+  const handleBlockClick = useCallback(
+    (blockIndex: number) => setPosition({ chapterIndex: position.chapterIndex, blockIndex }),
+    [setPosition, position.chapterIndex],
+  )
+
+  const chapterProgress = useMemo(
+    () => ({ chapterIndex: position.chapterIndex, totalChapters: book?.chapters.length ?? 0 }),
+    [position.chapterIndex, book?.chapters.length],
+  )
+  const blockProgress = useMemo(
+    () => ({ blockIndex: position.blockIndex, totalBlocks: chapter?.blocks.length ?? 0 }),
+    [position.blockIndex, chapter?.blocks.length],
+  )
+
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas text-ink">
       <input
@@ -129,16 +162,13 @@ export default function App() {
 
       <Sidebar
         isOpen={isSidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={handleCloseSidebar}
         book={book}
         currentChapterIndex={position.chapterIndex}
-        onSelectChapter={(chapterIndex) => setPosition({ chapterIndex, blockIndex: 0 })}
-        onRequestOpenFile={() => fileInputRef.current?.click()}
+        onSelectChapter={handleSelectChapter}
+        onRequestOpenFile={handleRequestOpenFile}
         library={library}
-        onSelectLibraryBook={(id) => {
-          void openBookFromLibrary(id)
-          setSidebarOpen(true)
-        }}
+        onSelectLibraryBook={handleSelectLibraryBook}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -149,7 +179,7 @@ export default function App() {
             currentWordIndex={currentWordIndex}
             font={font}
             isReading={isReading}
-            onBlockClick={(blockIndex) => setPosition({ chapterIndex: position.chapterIndex, blockIndex })}
+            onBlockClick={handleBlockClick}
           />
         ) : (
           <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
@@ -171,24 +201,18 @@ export default function App() {
           onSpeedChange={setSpeed}
           onSkipPrev={prevBlock}
           onSkipNext={nextBlock}
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onOpenCommandPalette={handleOpenCommandPalette}
           onToggleSidebar={toggleSidebar}
           isSpeechEnabled={isSpeechEnabled}
           onToggleSpeech={toggleSpeech}
-          chapterProgress={{
-            chapterIndex: position.chapterIndex,
-            totalChapters: book?.chapters.length ?? 0,
-          }}
-          blockProgress={{
-            blockIndex: position.blockIndex,
-            totalBlocks: chapter?.blocks.length ?? 0,
-          }}
+          chapterProgress={chapterProgress}
+          blockProgress={blockProgress}
         />
       </div>
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
+        onClose={handleCloseCommandPalette}
         theme={theme}
         onThemeChange={setTheme}
         font={font}

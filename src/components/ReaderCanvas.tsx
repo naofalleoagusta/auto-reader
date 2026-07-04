@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import type { Book } from '../types/book'
+import { memo, useEffect, useMemo, useRef, type RefObject } from 'react'
+import type { Book, TextBlock } from '../types/book'
 import type { FontSettings, ReadingPosition } from '../types/reader'
 import { splitWords } from '../lib/wpm'
 
@@ -11,6 +11,78 @@ interface ReaderCanvasProps {
   isReading: boolean
   onBlockClick: (blockIndex: number) => void
 }
+
+interface BlockViewProps {
+  block: TextBlock
+  index: number
+  isActive: boolean
+  isReading: boolean
+  /** Only meaningful when isActive — callers pass a stable -1 otherwise, so
+   * the tick-driven word index never shows up as a changed prop for
+   * non-active blocks and React.memo can skip them entirely. */
+  currentWordIndex: number
+  onBlockClick: (index: number) => void
+  activeBlockRef: RefObject<HTMLParagraphElement | null>
+  activeWordRef: RefObject<HTMLSpanElement | null>
+}
+
+const BlockView = memo(function BlockView({
+  block,
+  index,
+  isActive,
+  isReading,
+  currentWordIndex,
+  onBlockClick,
+  activeBlockRef,
+  activeWordRef,
+}: BlockViewProps) {
+  const words = useMemo(() => (isActive ? splitWords(block.text) : null), [isActive, block.text])
+
+  return (
+    <p
+      ref={isActive ? activeBlockRef : undefined}
+      role="button"
+      tabIndex={0}
+      // pointerdown, not click: while playing, our own word-follow auto-scroll
+      // can shift the layout between press and release, so a click (fires on
+      // release) can land on the next block down. Acting on initial contact
+      // avoids that moving-target bug.
+      onPointerDown={() => onBlockClick(index)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onBlockClick(index)
+        }
+      }}
+      className={`cursor-pointer border-l-2 py-0.5 pl-4 -ml-4 transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
+        isActive
+          ? isReading
+            ? 'border-accent bg-accent/[0.06] text-ink'
+            : 'border-muted text-ink'
+          : 'border-transparent text-muted hover:text-ink'
+      } ${block.kind === 'heading' ? 'font-serif text-lg text-ink' : ''} ${
+        block.kind === 'quote' ? 'pl-10 italic text-muted' : ''
+      }`}
+    >
+      {words
+        ? words.map((word, wordIndex, allWords) => {
+            const isActiveWord = wordIndex === currentWordIndex
+            return (
+              <span key={wordIndex}>
+                <span
+                  ref={isActiveWord ? activeWordRef : undefined}
+                  className={isActiveWord ? 'rounded-[2px] bg-accent/30 text-ink' : undefined}
+                >
+                  {word}
+                </span>
+                {wordIndex < allWords.length - 1 ? ' ' : ''}
+              </span>
+            )
+          })
+        : block.text}
+    </p>
+  )
+})
 
 export function ReaderCanvas({
   book,
@@ -73,41 +145,17 @@ export function ReaderCanvas({
           {chapter.blocks.map((block, index) => {
             const isActive = index === position.blockIndex
             return (
-              <p
+              <BlockView
                 key={block.id}
-                ref={isActive ? activeBlockRef : undefined}
-                // pointerdown, not click: while playing, our own word-follow
-                // auto-scroll can shift the layout between press and release,
-                // so a click (fires on release) can land on the next block
-                // down. Acting on initial contact avoids that moving-target bug.
-                onPointerDown={() => onBlockClick(index)}
-                className={`cursor-pointer border-l-2 py-0.5 pl-4 -ml-4 transition-colors duration-300 ${
-                  isActive
-                    ? isReading
-                      ? 'border-accent bg-accent/[0.06] text-ink'
-                      : 'border-muted text-ink'
-                    : 'border-transparent text-muted hover:text-ink'
-                } ${block.kind === 'heading' ? 'font-serif text-lg text-ink' : ''} ${
-                  block.kind === 'quote' ? 'pl-10 italic text-muted' : ''
-                }`}
-              >
-                {isActive
-                  ? splitWords(block.text).map((word, wordIndex, words) => {
-                      const isActiveWord = wordIndex === currentWordIndex
-                      return (
-                        <span key={wordIndex}>
-                          <span
-                            ref={isActiveWord ? activeWordRef : undefined}
-                            className={isActiveWord ? 'rounded-[2px] bg-accent/30 text-ink' : undefined}
-                          >
-                            {word}
-                          </span>
-                          {wordIndex < words.length - 1 ? ' ' : ''}
-                        </span>
-                      )
-                    })
-                  : block.text}
-              </p>
+                block={block}
+                index={index}
+                isActive={isActive}
+                isReading={isReading}
+                currentWordIndex={isActive ? currentWordIndex : -1}
+                onBlockClick={onBlockClick}
+                activeBlockRef={activeBlockRef}
+                activeWordRef={activeWordRef}
+              />
             )
           })}
         </div>

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { MAX_WPM, MIN_WPM } from '../types/reader'
 
 interface ControlBarProps {
@@ -16,8 +17,9 @@ interface ControlBarProps {
 }
 
 const TEMPO_TICKS = 24
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60'
 
-export function ControlBar({
+export const ControlBar = memo(function ControlBar({
   isReading,
   onTogglePlay,
   readingSpeedWpm,
@@ -45,7 +47,7 @@ export function ControlBar({
         <button
           type="button"
           onClick={onToggleSidebar}
-          className="flex h-11 w-11 items-center justify-center text-muted transition-colors hover:text-ink sm:h-8 sm:w-8"
+          className={`flex h-11 w-11 items-center justify-center text-muted transition-colors hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           aria-label="Toggle sidebar"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
@@ -58,7 +60,7 @@ export function ControlBar({
             type="button"
             onClick={onSkipPrev}
             aria-label="Previous paragraph"
-            className="flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8"
+            className={`flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           >
             ‹‹
           </button>
@@ -67,7 +69,7 @@ export function ControlBar({
             type="button"
             onClick={onTogglePlay}
             aria-label={isReading ? 'Pause' : 'Play'}
-            className="flex h-11 w-12 items-center justify-center border border-accent text-sm text-accent transition-colors hover:bg-accent hover:text-canvas sm:h-8 sm:w-12"
+            className={`flex h-11 w-12 items-center justify-center border border-accent text-sm text-accent transition-colors hover:bg-accent hover:text-canvas sm:h-8 sm:w-12 ${FOCUS_RING}`}
           >
             {isReading ? '❚❚' : '▶'}
           </button>
@@ -76,7 +78,7 @@ export function ControlBar({
             type="button"
             onClick={onSkipNext}
             aria-label="Next paragraph"
-            className="flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8"
+            className={`flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           >
             ››
           </button>
@@ -88,7 +90,7 @@ export function ControlBar({
             onClick={onToggleSpeech}
             aria-label={isSpeechEnabled ? 'Mute narration' : 'Unmute narration'}
             aria-pressed={isSpeechEnabled}
-            className={`flex h-11 w-11 items-center justify-center transition-colors sm:h-8 sm:w-8 ${isSpeechEnabled ? 'text-accent' : 'text-muted hover:text-ink'}`}
+            className={`flex h-11 w-11 items-center justify-center transition-colors sm:h-8 sm:w-8 ${FOCUS_RING} ${isSpeechEnabled ? 'text-accent' : 'text-muted hover:text-ink'}`}
           >
             {isSpeechEnabled ? (
               <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
@@ -106,7 +108,7 @@ export function ControlBar({
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="flex h-11 items-center gap-1.5 border border-line px-2 text-[11px] tabular-nums text-muted transition-colors hover:border-accent hover:text-accent sm:hidden"
+            className={`flex h-11 items-center gap-1.5 border border-line px-2 text-[11px] tabular-nums text-muted transition-colors hover:border-accent hover:text-accent sm:hidden ${FOCUS_RING}`}
             aria-label="Open reading speed preferences"
           >
             {readingSpeedWpm} WPM
@@ -116,7 +118,7 @@ export function ControlBar({
             <button
               type="button"
               onClick={() => onSpeedChange(readingSpeedWpm - 10)}
-              className="text-muted transition-colors hover:text-ink"
+              className={`text-muted transition-colors hover:text-ink ${FOCUS_RING}`}
               aria-label="Decrease speed"
             >
               −
@@ -141,7 +143,7 @@ export function ControlBar({
             <button
               type="button"
               onClick={() => onSpeedChange(readingSpeedWpm + 10)}
-              className="text-muted transition-colors hover:text-ink"
+              className={`text-muted transition-colors hover:text-ink ${FOCUS_RING}`}
               aria-label="Increase speed"
             >
               +
@@ -156,7 +158,7 @@ export function ControlBar({
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="hidden items-center border border-line px-2 py-1 text-[11px] text-muted transition-colors hover:border-accent hover:text-accent sm:flex"
+            className={`hidden items-center border border-line px-2 py-1 text-[11px] text-muted transition-colors hover:border-accent hover:text-accent sm:flex ${FOCUS_RING}`}
           >
             ⌘K
           </button>
@@ -164,4 +166,4 @@ export function ControlBar({
       </div>
     </div>
   )
-}
+})
