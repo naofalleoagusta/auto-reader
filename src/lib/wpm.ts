@@ -17,6 +17,14 @@ export function countWords(text: string): number {
   return trimmed.split(/\s+/).length
 }
 
+/** Same tokenization as countWords, but returns the words themselves for
+ * per-word rendering/highlighting. */
+export function splitWords(text: string): string[] {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return []
+  return trimmed.split(/\s+/)
+}
+
 /** SpeechSynthesisUtterance.rate=1 reads at ~150 wpm; clamp to stay intelligible. */
 const SPEECH_BASE_WPM = 150
 

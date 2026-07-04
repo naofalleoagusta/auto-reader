@@ -5,6 +5,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useApplyTheme } from './hooks/useApplyTheme'
 import { useTextToSpeech } from './hooks/useTextToSpeech'
 import { useBookParser } from './hooks/useBookParser'
+import { findLibraryEntryByFile, saveBook } from './lib/db'
 import { DropZone } from './components/DropZone'
 import { Sidebar } from './components/Sidebar'
 import { ReaderCanvas } from './components/ReaderCanvas'
@@ -28,8 +29,13 @@ export default function App() {
   const isSidebarOpen = useReaderState((s) => s.isSidebarOpen)
   const isCommandPaletteOpen = useReaderState((s) => s.isCommandPaletteOpen)
   const isSpeechEnabled = useReaderState((s) => s.isSpeechEnabled)
+  const currentWordIndex = useReaderState((s) => s.currentWordIndex)
+  const library = useReaderState((s) => s.library)
+  const lastOpenedBookId = useReaderState((s) => s.lastOpenedBookId)
 
   const loadBook = useReaderState((s) => s.loadBook)
+  const refreshLibrary = useReaderState((s) => s.refreshLibrary)
+  const openBookFromLibrary = useReaderState((s) => s.openBookFromLibrary)
   const setPosition = useReaderState((s) => s.setPosition)
   const togglePlay = useReaderState((s) => s.togglePlay)
   const nextBlock = useReaderState((s) => s.nextBlock)
@@ -54,15 +60,32 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Restore the last-open book (and its saved position) on refresh, and
+  // populate the sidebar's recent-books list from IndexedDB.
+  useEffect(() => {
+    void refreshLibrary()
+    if (lastOpenedBookId) void openBookFromLibrary(lastOpenedBookId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleFileAccepted = useCallback(
     async (file: File) => {
+      const existing = await findLibraryEntryByFile(file.name, file.size)
+      if (existing) {
+        await openBookFromLibrary(existing.id)
+        setSidebarOpen(true)
+        return
+      }
+
       const parsedBook = await parseFile(file).catch(() => null)
       if (parsedBook) {
+        await saveBook(parsedBook)
         loadBook(parsedBook)
+        await refreshLibrary()
         setSidebarOpen(true)
       }
     },
-    [parseFile, loadBook, setSidebarOpen],
+    [parseFile, loadBook, setSidebarOpen, openBookFromLibrary, refreshLibrary],
   )
 
   const chapter = book?.chapters[position.chapterIndex]
@@ -88,6 +111,11 @@ export default function App() {
         currentChapterIndex={position.chapterIndex}
         onSelectChapter={(chapterIndex) => setPosition({ chapterIndex, blockIndex: 0 })}
         onRequestOpenFile={() => fileInputRef.current?.click()}
+        library={library}
+        onSelectLibraryBook={(id) => {
+          void openBookFromLibrary(id)
+          setSidebarOpen(true)
+        }}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -95,6 +123,7 @@ export default function App() {
           <ReaderCanvas
             book={book}
             position={position}
+            currentWordIndex={currentWordIndex}
             font={font}
             isReading={isReading}
             onBlockClick={(blockIndex) => setPosition({ chapterIndex: position.chapterIndex, blockIndex })}

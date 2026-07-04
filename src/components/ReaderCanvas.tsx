@@ -1,16 +1,25 @@
 import { useEffect, useRef } from 'react'
 import type { Book } from '../types/book'
 import type { FontSettings, ReadingPosition } from '../types/reader'
+import { splitWords } from '../lib/wpm'
 
 interface ReaderCanvasProps {
   book: Book | null
   position: ReadingPosition
+  currentWordIndex: number
   font: FontSettings
   isReading: boolean
   onBlockClick: (blockIndex: number) => void
 }
 
-export function ReaderCanvas({ book, position, font, isReading, onBlockClick }: ReaderCanvasProps) {
+export function ReaderCanvas({
+  book,
+  position,
+  currentWordIndex,
+  font,
+  isReading,
+  onBlockClick,
+}: ReaderCanvasProps) {
   const activeBlockRef = useRef<HTMLParagraphElement | null>(null)
 
   useEffect(() => {
@@ -63,7 +72,20 @@ export function ReaderCanvas({ book, position, font, isReading, onBlockClick }: 
                   block.kind === 'quote' ? 'pl-10 italic text-muted' : ''
                 }`}
               >
-                {block.text}
+                {isActive
+                  ? splitWords(block.text).map((word, wordIndex, words) => (
+                      <span key={wordIndex}>
+                        <span
+                          className={
+                            wordIndex === currentWordIndex ? 'rounded-[2px] bg-accent/30 text-ink' : undefined
+                          }
+                        >
+                          {word}
+                        </span>
+                        {wordIndex < words.length - 1 ? ' ' : ''}
+                      </span>
+                    ))
+                  : block.text}
               </p>
             )
           })}

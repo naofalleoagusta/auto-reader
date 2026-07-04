@@ -1,4 +1,4 @@
-import type { Book } from '../types/book'
+import type { Book, LibraryEntry } from '../types/book'
 
 interface SidebarProps {
   isOpen: boolean
@@ -7,6 +7,8 @@ interface SidebarProps {
   currentChapterIndex: number
   onSelectChapter: (chapterIndex: number) => void
   onRequestOpenFile: () => void
+  library: LibraryEntry[]
+  onSelectLibraryBook: (id: string) => void
 }
 
 export function Sidebar({
@@ -16,6 +18,8 @@ export function Sidebar({
   currentChapterIndex,
   onSelectChapter,
   onRequestOpenFile,
+  library,
+  onSelectLibraryBook,
 }: SidebarProps) {
   return (
     <>
@@ -51,6 +55,34 @@ export function Sidebar({
         >
           + OPEN FILE
         </button>
+
+        {library.length > 0 && (
+          <div className="mb-4 border-b border-line pb-4">
+            <p className="mb-1 px-4 text-[11px] tracking-wider text-muted">RECENT</p>
+            <nav className="flex flex-col">
+              {library.map((entry) => {
+                const isActive = entry.id === book?.id
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => onSelectLibraryBook(entry.id)}
+                    className={`flex flex-col gap-0.5 border-l-2 px-4 py-1.5 text-left transition-colors ${
+                      isActive
+                        ? 'border-accent bg-canvas'
+                        : 'border-transparent hover:border-line hover:bg-canvas/60'
+                    }`}
+                  >
+                    <span className={`truncate font-serif text-sm not-italic ${isActive ? 'text-accent' : 'text-ink'}`}>
+                      {entry.title}
+                    </span>
+                    <span className="truncate text-[10px] uppercase tracking-wider text-muted">{entry.format}</span>
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto pb-4">
           {book ? (

@@ -1,3 +1,5 @@
+import type { ReadingPosition } from './reader'
+
 export type BookSourceFormat = 'epub' | 'pdf'
 
 export type TextBlockKind = 'paragraph' | 'heading' | 'quote'
@@ -40,4 +42,11 @@ export interface BookMetadata {
 export interface Book extends BookMetadata {
   chapters: Chapter[]
   totalWordCount: number
+}
+
+/** A saved-library record: cheap to list (no chapter/block text) — the full
+ * Book is stored separately, keyed by the same id. */
+export interface LibraryEntry extends BookMetadata {
+  lastPosition: ReadingPosition
+  lastOpenedAt: number
 }

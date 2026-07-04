@@ -1,81 +1,141 @@
 import { create } from 'zustand'
-import type { ReaderStore } from '../types/reader'
+import { persist } from 'zustand/middleware'
+import type { ReaderStore, ReadingPosition } from '../types/reader'
 import { clampWpm } from '../lib/wpm'
+import * as db from '../lib/db'
 
-export const useReaderState = create<ReaderStore>((set, get) => ({
-  book: null,
-  position: { chapterIndex: 0, blockIndex: 0 },
-  isReading: false,
-  readingSpeedWpm: 150,
-  font: { fontSize: 19, lineHeight: 1.7, fontFamily: 'serif' },
-  theme: 'deep-dark',
-  isSidebarOpen: true,
-  isCommandPaletteOpen: false,
-  isSpeechEnabled: true,
-  recentBooks: [],
+export const useReaderState = create<ReaderStore>()(
+  persist(
+    (set, get) => ({
+      book: null,
+      position: { chapterIndex: 0, blockIndex: 0 },
+      currentWordIndex: 0,
+      isReading: false,
+      readingSpeedWpm: 150,
+      font: { fontSize: 19, lineHeight: 1.7, fontFamily: 'serif' },
+      theme: 'deep-dark',
+      isSidebarOpen: true,
+      isCommandPaletteOpen: false,
+      isSpeechEnabled: true,
+      library: [],
+      lastOpenedBookId: null,
 
-  loadBook: (book) =>
-    set({ book, position: { chapterIndex: 0, blockIndex: 0 }, isReading: false }),
-  closeBook: () => set({ book: null, isReading: false }),
+      loadBook: (book) =>
+        set({
+          book,
+          position: { chapterIndex: 0, blockIndex: 0 },
+          currentWordIndex: 0,
+          isReading: false,
+          lastOpenedBookId: book.id,
+        }),
+      closeBook: () => set({ book: null, isReading: false }),
 
-  setPosition: (position) => set({ position }),
+      refreshLibrary: async () => {
+        const library = await db.getLibrary()
+        set({ library })
+      },
 
-  nextBlock: () => {
-    const { book, position } = get()
-    if (!book) return
-    const chapter = book.chapters[position.chapterIndex]
-    if (!chapter) return
+      openBookFromLibrary: async (id) => {
+        const book = await db.getBook(id)
+        if (!book) return
+        const entry = await db.getLibraryEntry(id)
+        set({
+          book,
+          position: entry?.lastPosition ?? { chapterIndex: 0, blockIndex: 0 },
+          currentWordIndex: 0,
+          isReading: false,
+          lastOpenedBookId: id,
+        })
+      },
 
-    if (position.blockIndex + 1 < chapter.blocks.length) {
-      set({ position: { chapterIndex: position.chapterIndex, blockIndex: position.blockIndex + 1 } })
-      return
-    }
+      setPosition: (position) => {
+        set({ position, currentWordIndex: 0 })
+        const { book } = get()
+        if (book) void db.updateLastPosition(book.id, position)
+      },
 
-    const nextChapterIndex = position.chapterIndex + 1
-    if (nextChapterIndex < book.chapters.length) {
-      set({ position: { chapterIndex: nextChapterIndex, blockIndex: 0 } })
-      return
-    }
+      nextBlock: () => {
+        const { book, position } = get()
+        if (!book) return
+        const chapter = book.chapters[position.chapterIndex]
+        if (!chapter) return
 
-    // Off the last block of the last chapter — stop.
-    set({ isReading: false })
-  },
+        const persistAndSet = (next: ReadingPosition) => {
+          set({ position: next, currentWordIndex: 0 })
+          void db.updateLastPosition(book.id, next)
+        }
 
-  prevBlock: () => {
-    const { book, position } = get()
-    if (!book) return
+        if (position.blockIndex + 1 < chapter.blocks.length) {
+          persistAndSet({ chapterIndex: position.chapterIndex, blockIndex: position.blockIndex + 1 })
+          return
+        }
 
-    if (position.blockIndex > 0) {
-      set({ position: { chapterIndex: position.chapterIndex, blockIndex: position.blockIndex - 1 } })
-      return
-    }
+        const nextChapterIndex = position.chapterIndex + 1
+        if (nextChapterIndex < book.chapters.length) {
+          persistAndSet({ chapterIndex: nextChapterIndex, blockIndex: 0 })
+          return
+        }
 
-    const prevChapterIndex = position.chapterIndex - 1
-    if (prevChapterIndex >= 0) {
-      const prevChapter = book.chapters[prevChapterIndex]
-      const lastBlockIndex = Math.max(0, prevChapter.blocks.length - 1)
-      set({ position: { chapterIndex: prevChapterIndex, blockIndex: lastBlockIndex } })
-    }
-    // Already at the very first block — no-op.
-  },
+        // Off the last block of the last chapter — stop.
+        set({ isReading: false })
+      },
 
-  play: () => set({ isReading: true }),
-  pause: () => set({ isReading: false }),
-  togglePlay: () => set((s) => ({ isReading: !s.isReading })),
+      prevBlock: () => {
+        const { book, position } = get()
+        if (!book) return
 
-  setSpeed: (wpm) => set({ readingSpeedWpm: clampWpm(wpm) }),
-  adjustSpeed: (delta) => set((s) => ({ readingSpeedWpm: clampWpm(s.readingSpeedWpm + delta) })),
+        const persistAndSet = (next: ReadingPosition) => {
+          set({ position: next, currentWordIndex: 0 })
+          void db.updateLastPosition(book.id, next)
+        }
 
-  setFontSize: (fontSize) => set((s) => ({ font: { ...s.font, fontSize } })),
-  setLineHeight: (lineHeight) => set((s) => ({ font: { ...s.font, lineHeight } })),
-  setFontFamily: (fontFamily) => set((s) => ({ font: { ...s.font, fontFamily } })),
+        if (position.blockIndex > 0) {
+          persistAndSet({ chapterIndex: position.chapterIndex, blockIndex: position.blockIndex - 1 })
+          return
+        }
 
-  setTheme: (theme) => set({ theme }),
-  toggleSidebar: () => set((s) => ({ isSidebarOpen: !s.isSidebarOpen })),
-  setSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
-  toggleCommandPalette: () => set((s) => ({ isCommandPaletteOpen: !s.isCommandPaletteOpen })),
-  setCommandPaletteOpen: (isCommandPaletteOpen) => set({ isCommandPaletteOpen }),
+        const prevChapterIndex = position.chapterIndex - 1
+        if (prevChapterIndex >= 0) {
+          const prevChapter = book.chapters[prevChapterIndex]
+          const lastBlockIndex = Math.max(0, prevChapter.blocks.length - 1)
+          persistAndSet({ chapterIndex: prevChapterIndex, blockIndex: lastBlockIndex })
+        }
+        // Already at the very first block — no-op.
+      },
 
-  toggleSpeech: () => set((s) => ({ isSpeechEnabled: !s.isSpeechEnabled })),
-  setSpeechEnabled: (isSpeechEnabled) => set({ isSpeechEnabled }),
-}))
+      setWordIndex: (currentWordIndex) => set({ currentWordIndex }),
+
+      play: () => set({ isReading: true }),
+      pause: () => set({ isReading: false }),
+      togglePlay: () => set((s) => ({ isReading: !s.isReading })),
+
+      setSpeed: (wpm) => set({ readingSpeedWpm: clampWpm(wpm) }),
+      adjustSpeed: (delta) => set((s) => ({ readingSpeedWpm: clampWpm(s.readingSpeedWpm + delta) })),
+
+      setFontSize: (fontSize) => set((s) => ({ font: { ...s.font, fontSize } })),
+      setLineHeight: (lineHeight) => set((s) => ({ font: { ...s.font, lineHeight } })),
+      setFontFamily: (fontFamily) => set((s) => ({ font: { ...s.font, fontFamily } })),
+
+      setTheme: (theme) => set({ theme }),
+      toggleSidebar: () => set((s) => ({ isSidebarOpen: !s.isSidebarOpen })),
+      setSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
+      toggleCommandPalette: () => set((s) => ({ isCommandPaletteOpen: !s.isCommandPaletteOpen })),
+      setCommandPaletteOpen: (isCommandPaletteOpen) => set({ isCommandPaletteOpen }),
+
+      toggleSpeech: () => set((s) => ({ isSpeechEnabled: !s.isSpeechEnabled })),
+      setSpeechEnabled: (isSpeechEnabled) => set({ isSpeechEnabled }),
+    }),
+    {
+      name: 'auto-reader-settings',
+      // Book content lives in IndexedDB (src/lib/db.ts), not localStorage —
+      // only small preferences + "what to reopen" are persisted here.
+      partialize: (state) => ({
+        font: state.font,
+        theme: state.theme,
+        readingSpeedWpm: state.readingSpeedWpm,
+        isSpeechEnabled: state.isSpeechEnabled,
+        lastOpenedBookId: state.lastOpenedBookId,
+      }),
+    },
+  ),
+)

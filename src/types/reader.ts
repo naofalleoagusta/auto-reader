@@ -1,4 +1,4 @@
-import type { Book, BookMetadata } from './book'
+import type { Book, LibraryEntry } from './book'
 
 export type ThemeMode = 'light' | 'sepia' | 'deep-dark'
 export type FontFamilyOption = 'serif' | 'sans'
@@ -22,6 +22,9 @@ export const MAX_WPM = 600
 export interface ReaderState {
   book: Book | null
   position: ReadingPosition
+  /** Index into the active block's word array (see lib/wpm.ts splitWords).
+   * Reset to 0 whenever position changes. Drives per-word highlighting. */
+  currentWordIndex: number
   isReading: boolean
   readingSpeedWpm: number
   font: FontSettings
@@ -29,19 +32,27 @@ export interface ReaderState {
   isSidebarOpen: boolean
   isCommandPaletteOpen: boolean
   isSpeechEnabled: boolean
-  /** Session-only — no persistence in this scaffold. */
-  recentBooks: BookMetadata[]
+  /** In-memory cache of IndexedDB's library store, refreshed via refreshLibrary(). */
+  library: LibraryEntry[]
+  /** Persisted (localStorage) — which book to auto-reopen on next load. */
+  lastOpenedBookId: string | null
 }
 
 export interface ReaderActions {
   loadBook: (book: Book) => void
   closeBook: () => void
 
+  /** Refreshes the in-memory library cache from IndexedDB. */
+  refreshLibrary: () => Promise<void>
+  /** Loads a previously saved book from IndexedDB, restoring its saved position. */
+  openBookFromLibrary: (id: string) => Promise<void>
+
   setPosition: (position: ReadingPosition) => void
   /** Advances one block, rolling into the next chapter; pauses at end of book. */
   nextBlock: () => void
   /** Steps back one block, rolling into the previous chapter's last block. */
   prevBlock: () => void
+  setWordIndex: (index: number) => void
 
   play: () => void
   pause: () => void
