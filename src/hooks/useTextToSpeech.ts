@@ -113,7 +113,14 @@ export function useTextToSpeech(): void {
       settled = true
       utteranceRef.current = null
       pausedKeyRef.current = null
-      nextBlock()
+      // A manual jump (e.g. clicking a block) could have moved position out
+      // from under this utterance since it was created — only advance from
+      // the position it actually belongs to, otherwise nextBlock() would
+      // advance from wherever the click just landed, overshooting it by one.
+      const current = useReaderState.getState().position
+      if (current.chapterIndex === position.chapterIndex && current.blockIndex === position.blockIndex) {
+        nextBlock()
+      }
     }
 
     const utterance = new SpeechSynthesisUtterance(block.text)

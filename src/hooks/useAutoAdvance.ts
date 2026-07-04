@@ -74,7 +74,15 @@ export function useAutoAdvance(): void {
         hasAdvanced = true
         elapsedRef.current = 0
         blockKeyRef.current = null
-        nextBlock()
+        // A manual jump (e.g. clicking a block) could have moved position
+        // out from under this timer since it was scheduled — only advance
+        // from the position this tick actually belongs to, otherwise
+        // nextBlock() would advance from wherever the click just landed,
+        // overshooting it by one.
+        const current = useReaderState.getState().position
+        if (current.chapterIndex === position.chapterIndex && current.blockIndex === position.blockIndex) {
+          nextBlock()
+        }
         return
       }
 

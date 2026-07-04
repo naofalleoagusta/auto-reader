@@ -22,24 +22,27 @@ export function ReaderCanvas({
 }: ReaderCanvasProps) {
   const activeBlockRef = useRef<HTMLParagraphElement | null>(null)
   const activeWordRef = useRef<HTMLSpanElement | null>(null)
+  const prevPositionRef = useRef({ chapterIndex: position.chapterIndex, blockIndex: position.blockIndex })
 
-  // Center the paragraph when it becomes active...
+  // Word-follow is the default (fires on every word advance, 'nearest' so it
+  // only nudges once the word nears the edge) — but on an actual paragraph
+  // switch, center the whole new paragraph instead. Both firing on the same
+  // render (word index also resets to 0 on switch) would race two competing
+  // scrollIntoView calls, so this is one effect that picks one or the other.
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    activeBlockRef.current?.scrollIntoView({
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-      block: 'center',
-    })
-  }, [position.chapterIndex, position.blockIndex])
+    const behavior = prefersReducedMotion ? 'auto' : 'smooth'
 
-  // ...then follow the highlighted word within it as it advances — 'nearest'
-  // so it only scrolls once the word approaches the edge, not every word.
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    activeWordRef.current?.scrollIntoView({
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-      block: 'nearest',
-    })
+    const paragraphChanged =
+      prevPositionRef.current.chapterIndex !== position.chapterIndex ||
+      prevPositionRef.current.blockIndex !== position.blockIndex
+    prevPositionRef.current = { chapterIndex: position.chapterIndex, blockIndex: position.blockIndex }
+
+    if (paragraphChanged) {
+      activeBlockRef.current?.scrollIntoView({ behavior, block: 'center' })
+    } else {
+      activeWordRef.current?.scrollIntoView({ behavior, block: 'nearest' })
+    }
   }, [position.chapterIndex, position.blockIndex, currentWordIndex])
 
   if (!book) {
@@ -73,7 +76,11 @@ export function ReaderCanvas({
               <p
                 key={block.id}
                 ref={isActive ? activeBlockRef : undefined}
-                onClick={() => onBlockClick(index)}
+                // pointerdown, not click: while playing, our own word-follow
+                // auto-scroll can shift the layout between press and release,
+                // so a click (fires on release) can land on the next block
+                // down. Acting on initial contact avoids that moving-target bug.
+                onPointerDown={() => onBlockClick(index)}
                 className={`cursor-pointer border-l-2 py-0.5 pl-4 -ml-4 transition-colors duration-300 ${
                   isActive
                     ? isReading
