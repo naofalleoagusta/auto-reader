@@ -3,10 +3,202 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auto Reader</title>
+    <title>Auto Reader — reading, paced to the word</title>
+    <meta
+      name="description"
+      content="A local-first EPUB and PDF reader that highlights and narrates your books at exactly the pace you set. No account, no server, nothing uploaded."
+    />
+    <link rel="canonical" href="https://auto-reader.naofalleoagusta.com/" />
+    <meta name="theme-color" content="#15110d" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Auto Reader — reading, paced to the word" />
+    <meta
+      property="og:description"
+      content="A local-first EPUB and PDF reader that highlights and narrates your books at exactly the pace you set. No account, no server, nothing uploaded."
+    />
+    <meta property="og:url" content="https://auto-reader.naofalleoagusta.com/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Auto Reader — reading, paced to the word" />
+    <meta
+      name="twitter:description"
+      content="A local-first EPUB and PDF reader that highlights and narrates your books at exactly the pace you set."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Auto Reader",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "description": "A local-first EPUB and PDF reader that highlights and narrates your books at exactly the pace you set. No account, no server, nothing uploaded.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "url": "https://auto-reader.naofalleoagusta.com/"
+      }
+    </script>
+
+    <link rel="stylesheet" href="/src/landing.css" />
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body class="font-mono">
+    <header class="border-b border-line px-6 py-5 sm:px-10">
+      <div class="mx-auto flex max-w-3xl items-center justify-between">
+        <span class="text-[11px] tracking-[0.2em] text-muted">AUTO READER</span>
+        <a
+          href="/app/"
+          class="border border-line px-3 py-1.5 text-[11px] tracking-wider text-ink transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+        >
+          OPEN THE READER
+        </a>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-3xl px-6 py-16 sm:px-10 sm:py-24">
+      <!-- Hero -->
+      <section>
+        <p class="mb-4 text-[11px] tracking-[0.2em] text-muted">EPUB &amp; PDF · WORD-SYNCED</p>
+        <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">
+          Reading, paced <span class="italic text-accent">to the word.</span>
+        </h1>
+        <p class="mt-6 max-w-xl font-serif text-lg text-muted">
+          Drop in a book. Auto Reader highlights and narrates it at exactly the speed you set, then
+          remembers exactly where you stopped.
+        </p>
+
+        <!-- Signature element: a live pacing demo, not a screenshot or icon row -->
+        <div class="mt-12 border border-line bg-surface p-6 sm:p-8">
+          <p id="pace-text" class="font-serif text-xl leading-relaxed text-muted sm:text-2xl">
+            <span class="pace-word">The</span> <span class="pace-word">first</span>
+            <span class="pace-word">thing</span> <span class="pace-word">you</span>
+            <span class="pace-word">notice</span> <span class="pace-word">is</span>
+            <span class="pace-word">how</span> <span class="pace-word">quietly</span>
+            <span class="pace-word">the</span> <span class="pace-word">pages</span>
+            <span class="pace-word">turn</span> <span class="pace-word">themselves.</span>
+          </p>
+          <div class="mt-6 flex items-center gap-3 text-[11px] tracking-wider text-muted">
+            <span>SLOW</span>
+            <input
+              id="pace-slider"
+              type="range"
+              min="80"
+              max="500"
+              step="10"
+              value="220"
+              class="h-1 flex-1 accent-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              aria-label="Reading pace, words per minute"
+            />
+            <span>FAST</span>
+            <span id="pace-value" class="w-20 shrink-0 text-right tabular-nums text-ink">220 WPM</span>
+          </div>
+        </div>
+
+        <a
+          href="/app/"
+          class="mt-10 inline-block border border-accent px-5 py-3 text-[11px] tracking-wider text-accent transition-colors hover:bg-accent hover:text-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+        >
+          OPEN THE READER →
+        </a>
+      </section>
+
+      <!-- Capabilities -->
+      <section class="mt-24">
+        <p class="mb-6 text-[11px] tracking-[0.2em] text-muted">WHAT IT DOES</p>
+        <ol class="flex flex-col">
+          <li class="flex gap-4 border-t border-line py-5">
+            <span class="shrink-0 tabular-nums text-[11px] text-muted">01</span>
+            <div>
+              <p class="font-serif text-lg text-ink">Local parsing</p>
+              <p class="mt-1 text-sm text-muted">
+                EPUB and PDF files are read entirely in your browser — nothing is uploaded anywhere.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-4 border-t border-line py-5">
+            <span class="shrink-0 tabular-nums text-[11px] text-muted">02</span>
+            <div>
+              <p class="font-serif text-lg text-ink">Narration that follows along</p>
+              <p class="mt-1 text-sm text-muted">
+                Word-synced highlighting, driven by your browser's own voices — no cloud text-to-speech.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-4 border-t border-line py-5">
+            <span class="shrink-0 tabular-nums text-[11px] text-muted">03</span>
+            <div>
+              <p class="font-serif text-lg text-ink">Picks up where you left it</p>
+              <p class="mt-1 text-sm text-muted">
+                Your library and your exact position — down to the word — are saved automatically, per book.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-4 border-y border-line py-5">
+            <span class="shrink-0 tabular-nums text-[11px] text-muted">04</span>
+            <div>
+              <p class="font-serif text-lg text-ink">Works offline</p>
+              <p class="mt-1 text-sm text-muted">
+                After the first visit, no connection is needed to keep reading.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Privacy -->
+      <section class="mt-24 border-l-2 border-accent/50 pl-6">
+        <p class="font-serif text-lg italic text-muted">
+          Nothing you read leaves your device. Auto Reader has no backend, no account, and no
+          analytics — your library lives in your browser's own storage, and only there.
+        </p>
+      </section>
+    </main>
+
+    <footer class="border-t border-line px-6 py-8 sm:px-10">
+      <div class="mx-auto flex max-w-3xl flex-col gap-4 text-[11px] tracking-wider text-muted sm:flex-row sm:items-center sm:justify-between">
+        <span>AUTO READER — A QUIET PLACE TO READ</span>
+        <a
+          href="/app/"
+          class="text-ink transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+        >
+          OPEN THE READER →
+        </a>
+      </div>
+    </footer>
+
+    <script>
+      // Signature-element pacing demo — vanilla, dependency-free, respects
+      // reduced motion. Mirrors the app's own word-highlight/WPM concept
+      // without importing any of the app's code.
+      ;(function () {
+        var words = document.querySelectorAll('#pace-text .pace-word')
+        var slider = document.getElementById('pace-slider')
+        var valueLabel = document.getElementById('pace-value')
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        var index = 0
+        var timeoutId = null
+
+        function msPerWord() {
+          var wpm = Number(slider.value)
+          return Math.max(120, 60000 / wpm)
+        }
+
+        function tick() {
+          for (var i = 0; i < words.length; i++) words[i].classList.remove('is-active')
+          words[index].classList.add('is-active')
+          index = (index + 1) % words.length
+          timeoutId = window.setTimeout(tick, msPerWord())
+        }
+
+        slider.addEventListener('input', function () {
+          valueLabel.textContent = slider.value + ' WPM'
+        })
+
+        if (reduceMotion) {
+          words[0].classList.add('is-active')
+        } else {
+          tick()
+        }
+      })()
+    </script>
   </body>
 </html>

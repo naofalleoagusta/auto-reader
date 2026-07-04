@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+@import '@fontsource/spectral/400.css';
+@import '@fontsource/spectral/500.css';
+@import '@fontsource/spectral/600.css';
+@import '@fontsource/spectral/400-italic.css';
+@import '@fontsource/spectral/600-italic.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+/* Same tokens as the app's src/index.css (deep-dark only — no theme
+   switcher on a marketing page, so no [data-theme] indirection needed). */
+@theme {
+  --color-canvas: #15110d;
+  --color-surface: #1e170f;
+  --color-ink: #ece0c8;
+  --color-muted: #8f7f64;
+  --color-accent: #c99a3f;
+  --color-line: rgba(236, 224, 200, 0.12);
+
+  --font-serif: 'Spectral', ui-serif, Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-canvas);
+}
+
+/* Pacing-demo word highlight — same visual language as the app's own
+   word-sync highlight (bg-accent/30, 2px rounding). */
+.pace-word {
+  transition: background-color 120ms ease-out;
+}
+.pace-word.is-active {
+  background-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: 2px;
+}
