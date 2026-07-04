@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+@import '@fontsource/spectral/400.css';
+@import '@fontsource/spectral/500.css';
+@import '@fontsource/spectral/600.css';
+@import '@fontsource/spectral/400-italic.css';
+@import '@fontsource/spectral/600-italic.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+@theme {
+  /* Reading room, not dashboard: warm espresso-black, gilt-page accent. */
+  --color-canvas: #15110d;
+  --color-surface: #1e170f;
+  --color-ink: #ece0c8;
+  --color-muted: #8f7f64;
+  --color-accent: #c99a3f;
+  --color-line: rgba(236, 224, 200, 0.12);
+
+  /* Serif carries the book's own text; mono carries everything the app
+     itself says (labels, controls, data) — two voices, not one default. */
+  --font-serif: 'Spectral', ui-serif, Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+[data-theme='deep-dark'] {
+  --color-canvas: #15110d;
+  --color-surface: #1e170f;
+  --color-ink: #ece0c8;
+  --color-muted: #8f7f64;
+  --color-accent: #c99a3f;
+  --color-line: rgba(236, 224, 200, 0.12);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --color-canvas: #f2efe3;
+  --color-surface: #e8e2d0;
+  --color-ink: #241d14;
+  --color-muted: #6b5f4a;
+  --color-accent: #8a3a26;
+  --color-line: rgba(36, 29, 20, 0.12);
+}
+
+[data-theme='sepia'] {
+  color-scheme: light;
+  --color-canvas: #ecdfc2;
+  --color-surface: #e2d2ac;
+  --color-ink: #3b2f1e;
+  --color-muted: #7a6a4a;
+  --color-accent: #8a3a26;
+  --color-line: rgba(59, 47, 30, 0.14);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-canvas);
+}
