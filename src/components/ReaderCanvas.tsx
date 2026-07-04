@@ -21,7 +21,9 @@ export function ReaderCanvas({
   onBlockClick,
 }: ReaderCanvasProps) {
   const activeBlockRef = useRef<HTMLParagraphElement | null>(null)
+  const activeWordRef = useRef<HTMLSpanElement | null>(null)
 
+  // Center the paragraph when it becomes active...
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     activeBlockRef.current?.scrollIntoView({
@@ -29,6 +31,16 @@ export function ReaderCanvas({
       block: 'center',
     })
   }, [position.chapterIndex, position.blockIndex])
+
+  // ...then follow the highlighted word within it as it advances — 'nearest'
+  // so it only scrolls once the word approaches the edge, not every word.
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    activeWordRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'nearest',
+    })
+  }, [position.chapterIndex, position.blockIndex, currentWordIndex])
 
   if (!book) {
     return (
@@ -73,18 +85,20 @@ export function ReaderCanvas({
                 }`}
               >
                 {isActive
-                  ? splitWords(block.text).map((word, wordIndex, words) => (
-                      <span key={wordIndex}>
-                        <span
-                          className={
-                            wordIndex === currentWordIndex ? 'rounded-[2px] bg-accent/30 text-ink' : undefined
-                          }
-                        >
-                          {word}
+                  ? splitWords(block.text).map((word, wordIndex, words) => {
+                      const isActiveWord = wordIndex === currentWordIndex
+                      return (
+                        <span key={wordIndex}>
+                          <span
+                            ref={isActiveWord ? activeWordRef : undefined}
+                            className={isActiveWord ? 'rounded-[2px] bg-accent/30 text-ink' : undefined}
+                          >
+                            {word}
+                          </span>
+                          {wordIndex < words.length - 1 ? ' ' : ''}
                         </span>
-                        {wordIndex < words.length - 1 ? ' ' : ''}
-                      </span>
-                    ))
+                      )
+                    })
                   : block.text}
               </p>
             )

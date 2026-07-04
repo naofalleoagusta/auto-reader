@@ -4,6 +4,11 @@ import type { ReaderStore, ReadingPosition } from '../types/reader'
 import { clampWpm } from '../lib/wpm'
 import * as db from '../lib/db'
 
+/** Throttle for persisting currentWordIndex during active playback — writing
+ * on every word tick would hammer IndexedDB for no real benefit. */
+const WORD_PERSIST_THROTTLE_MS = 1000
+let lastWordPersistAt = 0
+
 export const useReaderState = create<ReaderStore>()(
   persist(
     (set, get) => ({
@@ -42,7 +47,7 @@ export const useReaderState = create<ReaderStore>()(
         set({
           book,
           position: entry?.lastPosition ?? { chapterIndex: 0, blockIndex: 0 },
-          currentWordIndex: 0,
+          currentWordIndex: entry?.lastWordIndex ?? 0,
           isReading: false,
           lastOpenedBookId: id,
         })
@@ -103,7 +108,16 @@ export const useReaderState = create<ReaderStore>()(
         // Already at the very first block — no-op.
       },
 
-      setWordIndex: (currentWordIndex) => set({ currentWordIndex }),
+      setWordIndex: (currentWordIndex) => {
+        set({ currentWordIndex })
+        const { book, position } = get()
+        if (!book) return
+        const now = Date.now()
+        if (now - lastWordPersistAt >= WORD_PERSIST_THROTTLE_MS) {
+          lastWordPersistAt = now
+          void db.updateLastPosition(book.id, position, currentWordIndex)
+        }
+      },
 
       play: () => set({ isReading: true }),
       pause: () => set({ isReading: false }),

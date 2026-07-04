@@ -2,10 +2,18 @@ import { useEffect, useRef } from 'react'
 import { useReaderState } from '../state/useReaderState'
 import { wordsToDurationMs } from '../lib/wpm'
 
+/** Tick cadence for the pacing loop — plenty fine-grained for per-word
+ * highlighting without hammering a throttled background timer. */
+const TICK_MS = 120
+
 /**
- * Drives WPM-based auto-advance via requestAnimationFrame rather than
- * setInterval — rAF pauses naturally in background tabs (correct behavior
- * for a reader) and avoids the drift/throttling setInterval suffers under.
+ * Drives WPM-based auto-advance via setTimeout. Deliberately *not*
+ * requestAnimationFrame: rAF fully stops firing when the tab is hidden
+ * (backgrounded/phone locked) — great for not burning CPU while idle in the
+ * foreground, but wrong for "keep reading while the phone is locked," which
+ * is the actual requirement here. setTimeout only gets throttled in that
+ * situation (clamped to roughly 1s+ under aggressive backgrounding), it
+ * doesn't stop — pacing gets coarser while backgrounded, but keeps going.
  *
  * Only paces silent (non-narrated) reading. When narration is on,
  * useTextToSpeech is the pacing driver instead — it advances on the
@@ -54,14 +62,13 @@ export function useAutoAdvance(): void {
     // don't start a timer; resuming will pick up from here.
     if (!isReading) return
 
-    let rafId: number
-    let frameStart: number | null = null
+    let timeoutId: number
+    let segmentStart = performance.now()
     let hasAdvanced = false
     let lastWordIndex = Math.min(wordCount - 1, Math.floor(elapsedRef.current / perWordDurationMs))
 
-    const frame = (ts: number) => {
-      if (frameStart === null) frameStart = ts
-      const totalElapsed = elapsedRef.current + (ts - frameStart)
+    const tick = () => {
+      const totalElapsed = elapsedRef.current + (performance.now() - segmentStart)
 
       if (totalElapsed >= durationMs) {
         hasAdvanced = true
@@ -76,17 +83,17 @@ export function useAutoAdvance(): void {
         lastWordIndex = wordIndex
         setWordIndex(wordIndex)
       }
-      rafId = requestAnimationFrame(frame)
+      timeoutId = window.setTimeout(tick, TICK_MS)
     }
-    rafId = requestAnimationFrame(frame)
+    timeoutId = window.setTimeout(tick, TICK_MS)
 
     return () => {
-      cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
       // Bank the elapsed time from this segment so pausing (or any other
       // dep change) doesn't lose progress — unless we just advanced past
       // the block ourselves, in which case it's already reset for the next one.
-      if (!hasAdvanced && frameStart !== null) {
-        elapsedRef.current += performance.now() - frameStart
+      if (!hasAdvanced) {
+        elapsedRef.current += performance.now() - segmentStart
       }
     }
   }, [isReading, isSpeechEnabled, book, position.chapterIndex, position.blockIndex, wpm, nextBlock, setWordIndex])

@@ -48,5 +48,8 @@ export interface Book extends BookMetadata {
  * Book is stored separately, keyed by the same id. */
 export interface LibraryEntry extends BookMetadata {
   lastPosition: ReadingPosition
+  /** Word index within the last-position block, so refresh resumes the
+   * exact word instead of the paragraph's start. */
+  lastWordIndex: number
   lastOpenedAt: number
 }

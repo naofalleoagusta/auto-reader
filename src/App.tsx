@@ -4,8 +4,10 @@ import { useAutoAdvance } from './hooks/useAutoAdvance'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useApplyTheme } from './hooks/useApplyTheme'
 import { useTextToSpeech } from './hooks/useTextToSpeech'
+import { useWakeLock } from './hooks/useWakeLock'
+import { useMediaSession } from './hooks/useMediaSession'
 import { useBookParser } from './hooks/useBookParser'
-import { findLibraryEntryByFile, saveBook } from './lib/db'
+import { findLibraryEntryByFile, saveBook, updateLastPosition } from './lib/db'
 import { DropZone } from './components/DropZone'
 import { Sidebar } from './components/Sidebar'
 import { ReaderCanvas } from './components/ReaderCanvas'
@@ -19,6 +21,8 @@ export default function App() {
   useAutoAdvance()
   useKeyboardShortcuts()
   useTextToSpeech()
+  useWakeLock()
+  useMediaSession()
 
   const book = useReaderState((s) => s.book)
   const position = useReaderState((s) => s.position)
@@ -68,6 +72,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // setWordIndex throttles its own IndexedDB writes (see useReaderState) so
+  // a refresh mid-throttle-window could lose up to ~1s of word progress —
+  // flush the exact current word immediately when the page is hidden/closed.
+  useEffect(() => {
+    const flush = () => {
+      const state = useReaderState.getState()
+      if (state.book) void updateLastPosition(state.book.id, state.position, state.currentWordIndex)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pagehide', flush)
+    }
+  }, [])
+
   const handleFileAccepted = useCallback(
     async (file: File) => {
       const existing = await findLibraryEntryByFile(file.name, file.size)
@@ -91,7 +114,7 @@ export default function App() {
   const chapter = book?.chapters[position.chapterIndex]
 
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas text-ink">
+    <div className="flex h-dvh overflow-hidden bg-canvas text-ink">
       <input
         ref={fileInputRef}
         type="file"

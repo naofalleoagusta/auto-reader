@@ -45,6 +45,7 @@ export async function saveBook(book: Book): Promise<void> {
     sizeBytes: book.sizeBytes,
     addedAt: book.addedAt,
     lastPosition: { chapterIndex: 0, blockIndex: 0 },
+    lastWordIndex: 0,
     lastOpenedAt: Date.now(),
   }
   await withStore<IDBValidKey>(LIBRARY_STORE, 'readwrite', (store) => store.put(entry))
@@ -72,10 +73,15 @@ export async function getBook(id: string): Promise<Book | null> {
   return book ?? null
 }
 
-export async function updateLastPosition(id: string, position: ReadingPosition): Promise<void> {
+export async function updateLastPosition(
+  id: string,
+  position: ReadingPosition,
+  wordIndex = 0,
+): Promise<void> {
   const entry = await getLibraryEntry(id)
   if (!entry) return
   entry.lastPosition = position
+  entry.lastWordIndex = wordIndex
   entry.lastOpenedAt = Date.now()
   await withStore<IDBValidKey>(LIBRARY_STORE, 'readwrite', (store) => store.put(entry))
 }
