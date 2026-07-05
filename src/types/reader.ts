@@ -46,6 +46,10 @@ export interface ReaderActions {
   refreshLibrary: () => Promise<void>
   /** Loads a previously saved book from IndexedDB, restoring its saved position. */
   openBookFromLibrary: (id: string) => Promise<void>
+  /** Deletes one book from IndexedDB and the library cache; closes it first if it's the open book. */
+  removeBook: (id: string) => Promise<void>
+  /** Deletes every saved book and closes the currently open one, if any. */
+  clearLibrary: () => Promise<void>
 
   setPosition: (position: ReadingPosition) => void
   /** Advances one block, rolling into the next chapter; pauses at end of book. */

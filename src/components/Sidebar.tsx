@@ -10,6 +10,8 @@ interface SidebarProps {
   onRequestOpenFile: () => void
   library: LibraryEntry[]
   onSelectLibraryBook: (id: string) => void
+  onDeleteLibraryBook: (id: string) => void
+  onClearLibrary: () => void
 }
 
 export const Sidebar = memo(function Sidebar({
@@ -21,6 +23,8 @@ export const Sidebar = memo(function Sidebar({
   onRequestOpenFile,
   library,
   onSelectLibraryBook,
+  onDeleteLibraryBook,
+  onClearLibrary,
 }: SidebarProps) {
   return (
     <>
@@ -59,26 +63,47 @@ export const Sidebar = memo(function Sidebar({
 
         {library.length > 0 && (
           <div className="mb-4 border-b border-line pb-4">
-            <p className="mb-1 px-4 text-[11px] tracking-wider text-muted">RECENT</p>
+            <div className="mb-1 flex items-center justify-between px-4">
+              <p className="text-[11px] tracking-wider text-muted">RECENT</p>
+              <button
+                type="button"
+                onClick={onClearLibrary}
+                className="text-[10px] tracking-wider text-muted transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              >
+                CLEAR ALL
+              </button>
+            </div>
             <nav className="flex flex-col">
               {library.map((entry) => {
                 const isActive = entry.id === book?.id
                 return (
-                  <button
+                  <div
                     key={entry.id}
-                    type="button"
-                    onClick={() => onSelectLibraryBook(entry.id)}
-                    className={`flex flex-col gap-0.5 border-l-2 px-4 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
-                      isActive
-                        ? 'border-accent bg-canvas'
-                        : 'border-transparent hover:border-line hover:bg-canvas/60'
+                    className={`flex items-center border-l-2 pr-1 transition-colors ${
+                      isActive ? 'border-accent bg-canvas' : 'border-transparent hover:border-line hover:bg-canvas/60'
                     }`}
                   >
-                    <span className={`truncate font-serif text-sm not-italic ${isActive ? 'text-accent' : 'text-ink'}`}>
-                      {entry.title}
-                    </span>
-                    <span className="truncate text-[10px] uppercase tracking-wider text-muted">{entry.format}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onSelectLibraryBook(entry.id)}
+                      className="flex min-w-0 flex-1 flex-col gap-0.5 px-4 py-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    >
+                      <span className={`truncate font-serif text-sm not-italic ${isActive ? 'text-accent' : 'text-ink'}`}>
+                        {entry.title}
+                      </span>
+                      <span className="truncate text-[10px] uppercase tracking-wider text-muted">{entry.format}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteLibraryBook(entry.id)}
+                      aria-label={`Delete ${entry.title}`}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center text-muted transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 )
               })}
             </nav>

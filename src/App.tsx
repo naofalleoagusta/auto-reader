@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useReaderState } from './state/useReaderState'
 import { useAutoAdvance } from './hooks/useAutoAdvance'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -13,6 +13,7 @@ import { Sidebar } from './components/Sidebar'
 import { ReaderCanvas } from './components/ReaderCanvas'
 import { ControlBar } from './components/ControlBar'
 import { CommandPalette } from './components/CommandPalette'
+import { ConfirmDialog } from './components/ConfirmDialog'
 
 const ACCEPTED_EXTENSIONS = ['.epub', '.pdf']
 
@@ -40,6 +41,8 @@ export default function App() {
   const loadBook = useReaderState((s) => s.loadBook)
   const refreshLibrary = useReaderState((s) => s.refreshLibrary)
   const openBookFromLibrary = useReaderState((s) => s.openBookFromLibrary)
+  const removeBook = useReaderState((s) => s.removeBook)
+  const clearLibrary = useReaderState((s) => s.clearLibrary)
   const setPosition = useReaderState((s) => s.setPosition)
   const togglePlay = useReaderState((s) => s.togglePlay)
   const nextBlock = useReaderState((s) => s.nextBlock)
@@ -56,6 +59,12 @@ export default function App() {
 
   const { parseFile, isParsing, progress, error } = useBookParser()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string
+    message: string
+    confirmLabel: string
+    onConfirm: () => void
+  } | null>(null)
 
   // Sidebar is a docked pane on desktop (lg:+) but a full-overlay drawer below
   // that — default it closed there so first load doesn't cover the screen.
@@ -130,6 +139,33 @@ export default function App() {
     },
     [openBookFromLibrary, setSidebarOpen],
   )
+  const handleDeleteLibraryBook = useCallback(
+    (id: string) => {
+      const entry = library.find((e) => e.id === id)
+      setConfirmDialog({
+        title: 'Delete book',
+        message: `Delete "${entry?.title ?? 'this book'}"? This can't be undone.`,
+        confirmLabel: 'Delete',
+        onConfirm: () => {
+          void removeBook(id)
+          setConfirmDialog(null)
+        },
+      })
+    },
+    [library, removeBook],
+  )
+  const handleClearLibrary = useCallback(() => {
+    setConfirmDialog({
+      title: 'Clear library',
+      message: "Delete all saved books? This can't be undone.",
+      confirmLabel: 'Delete all',
+      onConfirm: () => {
+        void clearLibrary()
+        setConfirmDialog(null)
+      },
+    })
+  }, [clearLibrary])
+  const handleCancelConfirm = useCallback(() => setConfirmDialog(null), [])
   const handleOpenCommandPalette = useCallback(() => setCommandPaletteOpen(true), [setCommandPaletteOpen])
   const handleCloseCommandPalette = useCallback(() => setCommandPaletteOpen(false), [setCommandPaletteOpen])
   const handleBlockClick = useCallback(
@@ -169,6 +205,8 @@ export default function App() {
         onRequestOpenFile={handleRequestOpenFile}
         library={library}
         onSelectLibraryBook={handleSelectLibraryBook}
+        onDeleteLibraryBook={handleDeleteLibraryBook}
+        onClearLibrary={handleClearLibrary}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -221,6 +259,15 @@ export default function App() {
         onLineHeightChange={setLineHeight}
         readingSpeedWpm={readingSpeedWpm}
         onSpeedChange={setSpeed}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog !== null}
+        title={confirmDialog?.title ?? ''}
+        message={confirmDialog?.message ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+        onConfirm={confirmDialog?.onConfirm ?? handleCancelConfirm}
+        onCancel={handleCancelConfirm}
       />
     </div>
   )

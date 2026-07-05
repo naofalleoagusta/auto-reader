@@ -53,6 +53,22 @@ export const useReaderState = create<ReaderStore>()(
         })
       },
 
+      removeBook: async (id) => {
+        await db.deleteBook(id)
+        const library = await db.getLibrary()
+        const { book, lastOpenedBookId } = get()
+        set({
+          library,
+          ...(book?.id === id ? { book: null, isReading: false } : {}),
+          ...(lastOpenedBookId === id ? { lastOpenedBookId: null } : {}),
+        })
+      },
+
+      clearLibrary: async () => {
+        await db.clearLibrary()
+        set({ library: [], book: null, isReading: false, lastOpenedBookId: null })
+      },
+
       setPosition: (position) => {
         set({ position, currentWordIndex: 0 })
         const { book } = get()

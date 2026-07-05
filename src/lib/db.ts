@@ -115,3 +115,8 @@ export async function deleteBook(id: string): Promise<void> {
   await withStore<undefined>(BOOKS_STORE, 'readwrite', (store) => store.delete(id))
   await withStore<undefined>(LIBRARY_STORE, 'readwrite', (store) => store.delete(id))
 }
+
+export async function clearLibrary(): Promise<void> {
+  await withStore<undefined>(BOOKS_STORE, 'readwrite', (store) => store.clear())
+  await withStore<undefined>(LIBRARY_STORE, 'readwrite', (store) => store.clear())
+}
