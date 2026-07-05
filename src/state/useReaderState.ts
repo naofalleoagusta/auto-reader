@@ -21,6 +21,7 @@ export const useReaderState = create<ReaderStore>()(
       theme: 'deep-dark',
       isSidebarOpen: true,
       isCommandPaletteOpen: false,
+      isSearchOpen: false,
       isSpeechEnabled: true,
       library: [],
       lastOpenedBookId: null,
@@ -151,6 +152,8 @@ export const useReaderState = create<ReaderStore>()(
       setSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
       toggleCommandPalette: () => set((s) => ({ isCommandPaletteOpen: !s.isCommandPaletteOpen })),
       setCommandPaletteOpen: (isCommandPaletteOpen) => set({ isCommandPaletteOpen }),
+      toggleSearch: () => set((s) => ({ isSearchOpen: !s.isSearchOpen })),
+      setSearchOpen: (isSearchOpen) => set({ isSearchOpen }),
 
       toggleSpeech: () => set((s) => ({ isSpeechEnabled: !s.isSpeechEnabled })),
       setSpeechEnabled: (isSpeechEnabled) => set({ isSpeechEnabled }),

@@ -15,8 +15,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
  *   Space              toggle play/pause
  *   ArrowUp/ArrowDown  adjust reading speed
  *   Shift+ArrowUp/Down skip to previous/next paragraph
- *   Escape             close command palette, else toggle sidebar
+ *   Escape             close search, else command palette, else toggle sidebar
  *   Ctrl/Cmd+K         toggle command palette
+ *   Ctrl/Cmd+F         toggle search (books + in-book text), overrides native find
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -29,8 +30,16 @@ export function useKeyboardShortcuts(): void {
         return
       }
 
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        store.toggleSearch()
+        return
+      }
+
       if (event.key === 'Escape') {
-        if (store.isCommandPaletteOpen) {
+        if (store.isSearchOpen) {
+          store.setSearchOpen(false)
+        } else if (store.isCommandPaletteOpen) {
           store.setCommandPaletteOpen(false)
         } else {
           store.toggleSidebar()

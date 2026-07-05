@@ -14,6 +14,7 @@ import { ReaderCanvas } from './components/ReaderCanvas'
 import { ControlBar } from './components/ControlBar'
 import { CommandPalette } from './components/CommandPalette'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { SearchDialog } from './components/SearchDialog'
 
 const ACCEPTED_EXTENSIONS = ['.epub', '.pdf']
 
@@ -33,6 +34,7 @@ export default function App() {
   const theme = useReaderState((s) => s.theme)
   const isSidebarOpen = useReaderState((s) => s.isSidebarOpen)
   const isCommandPaletteOpen = useReaderState((s) => s.isCommandPaletteOpen)
+  const isSearchOpen = useReaderState((s) => s.isSearchOpen)
   const isSpeechEnabled = useReaderState((s) => s.isSpeechEnabled)
   const currentWordIndex = useReaderState((s) => s.currentWordIndex)
   const library = useReaderState((s) => s.library)
@@ -55,6 +57,7 @@ export default function App() {
   const toggleSidebar = useReaderState((s) => s.toggleSidebar)
   const setSidebarOpen = useReaderState((s) => s.setSidebarOpen)
   const setCommandPaletteOpen = useReaderState((s) => s.setCommandPaletteOpen)
+  const setSearchOpen = useReaderState((s) => s.setSearchOpen)
   const toggleSpeech = useReaderState((s) => s.toggleSpeech)
 
   const { parseFile, isParsing, progress, error } = useBookParser()
@@ -168,9 +171,15 @@ export default function App() {
   const handleCancelConfirm = useCallback(() => setConfirmDialog(null), [])
   const handleOpenCommandPalette = useCallback(() => setCommandPaletteOpen(true), [setCommandPaletteOpen])
   const handleCloseCommandPalette = useCallback(() => setCommandPaletteOpen(false), [setCommandPaletteOpen])
+  const handleOpenSearch = useCallback(() => setSearchOpen(true), [setSearchOpen])
+  const handleCloseSearch = useCallback(() => setSearchOpen(false), [setSearchOpen])
   const handleBlockClick = useCallback(
     (blockIndex: number) => setPosition({ chapterIndex: position.chapterIndex, blockIndex }),
     [setPosition, position.chapterIndex],
+  )
+  const handleJumpToBlock = useCallback(
+    (chapterIndex: number, blockIndex: number) => setPosition({ chapterIndex, blockIndex }),
+    [setPosition],
   )
 
   const chapterProgress = useMemo(
@@ -240,6 +249,7 @@ export default function App() {
           onSkipPrev={prevBlock}
           onSkipNext={nextBlock}
           onOpenCommandPalette={handleOpenCommandPalette}
+          onOpenSearch={handleOpenSearch}
           onToggleSidebar={toggleSidebar}
           isSpeechEnabled={isSpeechEnabled}
           onToggleSpeech={toggleSpeech}
@@ -259,6 +269,15 @@ export default function App() {
         onLineHeightChange={setLineHeight}
         readingSpeedWpm={readingSpeedWpm}
         onSpeedChange={setSpeed}
+      />
+
+      <SearchDialog
+        isOpen={isSearchOpen}
+        onClose={handleCloseSearch}
+        book={book}
+        library={library}
+        onSelectLibraryBook={handleSelectLibraryBook}
+        onJumpToBlock={handleJumpToBlock}
       />
 
       <ConfirmDialog

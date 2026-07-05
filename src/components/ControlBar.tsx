@@ -9,6 +9,7 @@ interface ControlBarProps {
   onSkipPrev: () => void
   onSkipNext: () => void
   onOpenCommandPalette: () => void
+  onOpenSearch: () => void
   onToggleSidebar: () => void
   isSpeechEnabled: boolean
   onToggleSpeech: () => void
@@ -27,6 +28,7 @@ export const ControlBar = memo(function ControlBar({
   onSkipPrev,
   onSkipNext,
   onOpenCommandPalette,
+  onOpenSearch,
   onToggleSidebar,
   isSpeechEnabled,
   onToggleSpeech,
@@ -52,6 +54,18 @@ export const ControlBar = memo(function ControlBar({
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className={`flex h-11 w-11 items-center justify-center text-muted transition-colors hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
+          aria-label="Search books and text"
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+            <circle cx="11" cy="11" r="7" />
+            <path strokeLinecap="round" d="m20 20-3.5-3.5" />
           </svg>
         </button>
 

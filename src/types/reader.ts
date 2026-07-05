@@ -31,6 +31,7 @@ export interface ReaderState {
   theme: ThemeMode
   isSidebarOpen: boolean
   isCommandPaletteOpen: boolean
+  isSearchOpen: boolean
   isSpeechEnabled: boolean
   /** In-memory cache of IndexedDB's library store, refreshed via refreshLibrary(). */
   library: LibraryEntry[]
@@ -74,6 +75,8 @@ export interface ReaderActions {
   setSidebarOpen: (open: boolean) => void
   toggleCommandPalette: () => void
   setCommandPaletteOpen: (open: boolean) => void
+  toggleSearch: () => void
+  setSearchOpen: (open: boolean) => void
 
   toggleSpeech: () => void
   setSpeechEnabled: (enabled: boolean) => void
