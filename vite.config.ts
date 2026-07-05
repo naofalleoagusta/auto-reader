@@ -14,6 +14,13 @@ export default defineConfig({
         // The actual reader SPA, relocated from the project root.
         app: resolve(__dirname, 'app/index.html'),
       },
+      output: {
+        manualChunks: {
+          // Stable vendor chunk — its hash doesn't change on app-code-only
+          // deploys, so repeat visitors don't re-download React each time.
+          vendor: ['react', 'react-dom'],
+        },
+      },
     },
   },
 })

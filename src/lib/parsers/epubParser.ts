@@ -1,4 +1,3 @@
-import EpubJs from 'epubjs'
 import type { NavItem } from 'epubjs'
 import type { Book, Chapter, TextBlock, TextBlockKind } from '../../types/book'
 import type { BookParser, ParseProgress } from '../../types/parser'
@@ -66,6 +65,7 @@ export const epubParser: BookParser = {
     const arrayBuffer = await file.arrayBuffer()
     tick(Math.round(totalBytes * 0.2), 'parsing')
 
+    const { default: EpubJs } = await import('epubjs')
     const epubBook = EpubJs(arrayBuffer)
     await epubBook.ready
 

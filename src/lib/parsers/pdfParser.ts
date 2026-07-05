@@ -1,4 +1,3 @@
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import type { PDFDocumentProxy, RefProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api'
 import type { Book, Chapter, TextBlock } from '../../types/book'
@@ -6,8 +5,6 @@ import type { BookParser, ParseProgress } from '../../types/parser'
 import { createId } from '../id'
 import { countWords } from '../wpm'
 import { groupLinesIntoParagraphs, linesFromTextContentItems } from './pdfLayout'
-
-GlobalWorkerOptions.workerSrc = workerSrc
 
 interface PdfInfoDict {
   Title?: string
@@ -95,6 +92,9 @@ export const pdfParser: BookParser = {
 
     tick(0, 'reading')
     const arrayBuffer = await file.arrayBuffer()
+
+    const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist')
+    GlobalWorkerOptions.workerSrc = workerSrc
 
     const loadingTask = getDocument({ data: arrayBuffer })
     loadingTask.onProgress = ({ loaded }: { loaded: number; total: number }) => {
