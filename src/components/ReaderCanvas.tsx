@@ -1,16 +1,7 @@
-import { memo, useEffect, useMemo, useRef, type RefObject } from 'react'
-import type { Book, TextBlock } from '../types/book'
-import type { FontSettings, ReadingPosition } from '../types/reader'
+import { memo, useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useReaderState } from '../state/useReaderState'
+import type { TextBlock } from '../types/book'
 import { splitWords } from '../lib/wpm'
-
-interface ReaderCanvasProps {
-  book: Book | null
-  position: ReadingPosition
-  currentWordIndex: number
-  font: FontSettings
-  isReading: boolean
-  onBlockClick: (blockIndex: number) => void
-}
 
 interface BlockViewProps {
   block: TextBlock
@@ -84,14 +75,24 @@ const BlockView = memo(function BlockView({
   )
 })
 
-export function ReaderCanvas({
-  book,
-  position,
-  currentWordIndex,
-  font,
-  isReading,
-  onBlockClick,
-}: ReaderCanvasProps) {
+export function ReaderCanvas() {
+  const book = useReaderState((s) => s.book)
+  const position = useReaderState((s) => s.position)
+  const currentWordIndex = useReaderState((s) => s.currentWordIndex)
+  const font = useReaderState((s) => s.font)
+  const isReading = useReaderState((s) => s.isReading)
+  const setPosition = useReaderState((s) => s.setPosition)
+
+  // useCallback here isn't decorative — BlockView is memoized specifically so
+  // non-active blocks skip re-rendering on every ~120ms word tick, and that
+  // only holds if the click handler each block receives has a stable
+  // identity across those ticks (it only changes when the chapter itself
+  // changes, not on tick or blockIndex-within-chapter changes).
+  const onBlockClick = useCallback(
+    (blockIndex: number) => setPosition({ chapterIndex: position.chapterIndex, blockIndex }),
+    [setPosition, position.chapterIndex],
+  )
+
   const activeBlockRef = useRef<HTMLParagraphElement | null>(null)
   const activeWordRef = useRef<HTMLSpanElement | null>(null)
   const prevPositionRef = useRef({ chapterIndex: position.chapterIndex, blockIndex: position.blockIndex })

@@ -1,14 +1,6 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Book, LibraryEntry } from '../types/book'
-
-interface SearchDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  book: Book | null
-  library: LibraryEntry[]
-  onSelectLibraryBook: (id: string) => void
-  onJumpToBlock: (chapterIndex: number, blockIndex: number) => void
-}
+import { useReaderState } from '../state/useReaderState'
 
 interface TextMatch {
   chapterIndex: number
@@ -53,14 +45,22 @@ function findLibraryMatches(library: LibraryEntry[], query: string): LibraryEntr
   )
 }
 
-export const SearchDialog = memo(function SearchDialog({
-  isOpen,
-  onClose,
-  book,
-  library,
-  onSelectLibraryBook,
-  onJumpToBlock,
-}: SearchDialogProps) {
+export function SearchDialog() {
+  const isOpen = useReaderState((s) => s.isSearchOpen)
+  const book = useReaderState((s) => s.book)
+  const library = useReaderState((s) => s.library)
+  const setSearchOpen = useReaderState((s) => s.setSearchOpen)
+  const openBookFromLibrary = useReaderState((s) => s.openBookFromLibrary)
+  const setPosition = useReaderState((s) => s.setPosition)
+  const setSidebarOpen = useReaderState((s) => s.setSidebarOpen)
+
+  const onClose = () => setSearchOpen(false)
+  const onSelectLibraryBook = (id: string) => {
+    void openBookFromLibrary(id)
+    setSidebarOpen(true)
+  }
+  const onJumpToBlock = (chapterIndex: number, blockIndex: number) => setPosition({ chapterIndex, blockIndex })
+
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -180,4 +180,4 @@ export const SearchDialog = memo(function SearchDialog({
       </div>
     </div>
   )
-})
+}

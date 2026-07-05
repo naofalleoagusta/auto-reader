@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useReaderState } from './state/useReaderState'
 import { useAutoAdvance } from './hooks/useAutoAdvance'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -26,48 +26,22 @@ export default function App() {
   useWakeLock()
   useMediaSession()
 
+  // Only state that actually decides what App itself renders (the
+  // DropZone/ReaderCanvas swap). Everything else — position, playback,
+  // theme, library, dialog state — is read directly by the components that
+  // use it via useReaderState selectors, not funneled through here. That's
+  // what keeps this component from re-rendering on every word tick, and
+  // why none of the child components below need props, memo, or callback
+  // stabilization to avoid cascading re-renders.
   const book = useReaderState((s) => s.book)
-  const position = useReaderState((s) => s.position)
-  const isReading = useReaderState((s) => s.isReading)
-  const readingSpeedWpm = useReaderState((s) => s.readingSpeedWpm)
-  const font = useReaderState((s) => s.font)
-  const theme = useReaderState((s) => s.theme)
-  const isSidebarOpen = useReaderState((s) => s.isSidebarOpen)
-  const isCommandPaletteOpen = useReaderState((s) => s.isCommandPaletteOpen)
-  const isSearchOpen = useReaderState((s) => s.isSearchOpen)
-  const isSpeechEnabled = useReaderState((s) => s.isSpeechEnabled)
-  const currentWordIndex = useReaderState((s) => s.currentWordIndex)
-  const library = useReaderState((s) => s.library)
   const lastOpenedBookId = useReaderState((s) => s.lastOpenedBookId)
-
   const loadBook = useReaderState((s) => s.loadBook)
   const refreshLibrary = useReaderState((s) => s.refreshLibrary)
   const openBookFromLibrary = useReaderState((s) => s.openBookFromLibrary)
-  const removeBook = useReaderState((s) => s.removeBook)
-  const clearLibrary = useReaderState((s) => s.clearLibrary)
-  const setPosition = useReaderState((s) => s.setPosition)
-  const togglePlay = useReaderState((s) => s.togglePlay)
-  const nextBlock = useReaderState((s) => s.nextBlock)
-  const prevBlock = useReaderState((s) => s.prevBlock)
-  const setSpeed = useReaderState((s) => s.setSpeed)
-  const setFontFamily = useReaderState((s) => s.setFontFamily)
-  const setFontSize = useReaderState((s) => s.setFontSize)
-  const setLineHeight = useReaderState((s) => s.setLineHeight)
-  const setTheme = useReaderState((s) => s.setTheme)
-  const toggleSidebar = useReaderState((s) => s.toggleSidebar)
   const setSidebarOpen = useReaderState((s) => s.setSidebarOpen)
-  const setCommandPaletteOpen = useReaderState((s) => s.setCommandPaletteOpen)
-  const setSearchOpen = useReaderState((s) => s.setSearchOpen)
-  const toggleSpeech = useReaderState((s) => s.toggleSpeech)
 
   const { parseFile, isParsing, progress, error } = useBookParser()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [confirmDialog, setConfirmDialog] = useState<{
-    title: string
-    message: string
-    confirmLabel: string
-    onConfirm: () => void
-  } | null>(null)
 
   // Sidebar is a docked pane on desktop (lg:+) but a full-overlay drawer below
   // that — default it closed there so first load doesn't cover the screen.
@@ -103,93 +77,22 @@ export default function App() {
     }
   }, [])
 
-  const handleFileAccepted = useCallback(
-    async (file: File) => {
-      const existing = await findLibraryEntryByFile(file.name, file.size)
-      if (existing) {
-        await openBookFromLibrary(existing.id)
-        setSidebarOpen(true)
-        return
-      }
-
-      const parsedBook = await parseFile(file).catch(() => null)
-      if (parsedBook) {
-        await saveBook(parsedBook)
-        loadBook(parsedBook)
-        await refreshLibrary()
-        setSidebarOpen(true)
-      }
-    },
-    [parseFile, loadBook, setSidebarOpen, openBookFromLibrary, refreshLibrary],
-  )
-
-  const chapter = book?.chapters[position.chapterIndex]
-
-  // Stabilized so Sidebar/ControlBar/CommandPalette (all React.memo) and
-  // ReaderCanvas's per-block memoization actually skip re-rendering on the
-  // frequent currentWordIndex ticks — inline arrow props would defeat memo
-  // every time regardless of whether anything visually changed.
-  const handleCloseSidebar = useCallback(() => setSidebarOpen(false), [setSidebarOpen])
-  const handleSelectChapter = useCallback(
-    (chapterIndex: number) => setPosition({ chapterIndex, blockIndex: 0 }),
-    [setPosition],
-  )
-  const handleRequestOpenFile = useCallback(() => fileInputRef.current?.click(), [])
-  const handleSelectLibraryBook = useCallback(
-    (id: string) => {
-      void openBookFromLibrary(id)
+  const handleFileAccepted = async (file: File) => {
+    const existing = await findLibraryEntryByFile(file.name, file.size)
+    if (existing) {
+      await openBookFromLibrary(existing.id)
       setSidebarOpen(true)
-    },
-    [openBookFromLibrary, setSidebarOpen],
-  )
-  const handleDeleteLibraryBook = useCallback(
-    (id: string) => {
-      const entry = library.find((e) => e.id === id)
-      setConfirmDialog({
-        title: 'Delete book',
-        message: `Delete "${entry?.title ?? 'this book'}"? This can't be undone.`,
-        confirmLabel: 'Delete',
-        onConfirm: () => {
-          void removeBook(id)
-          setConfirmDialog(null)
-        },
-      })
-    },
-    [library, removeBook],
-  )
-  const handleClearLibrary = useCallback(() => {
-    setConfirmDialog({
-      title: 'Clear library',
-      message: "Delete all saved books? This can't be undone.",
-      confirmLabel: 'Delete all',
-      onConfirm: () => {
-        void clearLibrary()
-        setConfirmDialog(null)
-      },
-    })
-  }, [clearLibrary])
-  const handleCancelConfirm = useCallback(() => setConfirmDialog(null), [])
-  const handleOpenCommandPalette = useCallback(() => setCommandPaletteOpen(true), [setCommandPaletteOpen])
-  const handleCloseCommandPalette = useCallback(() => setCommandPaletteOpen(false), [setCommandPaletteOpen])
-  const handleOpenSearch = useCallback(() => setSearchOpen(true), [setSearchOpen])
-  const handleCloseSearch = useCallback(() => setSearchOpen(false), [setSearchOpen])
-  const handleBlockClick = useCallback(
-    (blockIndex: number) => setPosition({ chapterIndex: position.chapterIndex, blockIndex }),
-    [setPosition, position.chapterIndex],
-  )
-  const handleJumpToBlock = useCallback(
-    (chapterIndex: number, blockIndex: number) => setPosition({ chapterIndex, blockIndex }),
-    [setPosition],
-  )
+      return
+    }
 
-  const chapterProgress = useMemo(
-    () => ({ chapterIndex: position.chapterIndex, totalChapters: book?.chapters.length ?? 0 }),
-    [position.chapterIndex, book?.chapters.length],
-  )
-  const blockProgress = useMemo(
-    () => ({ blockIndex: position.blockIndex, totalBlocks: chapter?.blocks.length ?? 0 }),
-    [position.blockIndex, chapter?.blocks.length],
-  )
+    const parsedBook = await parseFile(file).catch(() => null)
+    if (parsedBook) {
+      await saveBook(parsedBook)
+      loadBook(parsedBook)
+      await refreshLibrary()
+      setSidebarOpen(true)
+    }
+  }
 
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas text-ink">
@@ -205,29 +108,11 @@ export default function App() {
         }}
       />
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={handleCloseSidebar}
-        book={book}
-        currentChapterIndex={position.chapterIndex}
-        onSelectChapter={handleSelectChapter}
-        onRequestOpenFile={handleRequestOpenFile}
-        library={library}
-        onSelectLibraryBook={handleSelectLibraryBook}
-        onDeleteLibraryBook={handleDeleteLibraryBook}
-        onClearLibrary={handleClearLibrary}
-      />
+      <Sidebar onRequestOpenFile={() => fileInputRef.current?.click()} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         {book ? (
-          <ReaderCanvas
-            book={book}
-            position={position}
-            currentWordIndex={currentWordIndex}
-            font={font}
-            isReading={isReading}
-            onBlockClick={handleBlockClick}
-          />
+          <ReaderCanvas />
         ) : (
           <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
             <DropZone
@@ -241,53 +126,12 @@ export default function App() {
           </div>
         )}
 
-        <ControlBar
-          isReading={isReading}
-          onTogglePlay={togglePlay}
-          readingSpeedWpm={readingSpeedWpm}
-          onSpeedChange={setSpeed}
-          onSkipPrev={prevBlock}
-          onSkipNext={nextBlock}
-          onOpenCommandPalette={handleOpenCommandPalette}
-          onOpenSearch={handleOpenSearch}
-          onToggleSidebar={toggleSidebar}
-          isSpeechEnabled={isSpeechEnabled}
-          onToggleSpeech={toggleSpeech}
-          chapterProgress={chapterProgress}
-          blockProgress={blockProgress}
-        />
+        <ControlBar />
       </div>
 
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={handleCloseCommandPalette}
-        theme={theme}
-        onThemeChange={setTheme}
-        font={font}
-        onFontFamilyChange={setFontFamily}
-        onFontSizeChange={setFontSize}
-        onLineHeightChange={setLineHeight}
-        readingSpeedWpm={readingSpeedWpm}
-        onSpeedChange={setSpeed}
-      />
-
-      <SearchDialog
-        isOpen={isSearchOpen}
-        onClose={handleCloseSearch}
-        book={book}
-        library={library}
-        onSelectLibraryBook={handleSelectLibraryBook}
-        onJumpToBlock={handleJumpToBlock}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmDialog !== null}
-        title={confirmDialog?.title ?? ''}
-        message={confirmDialog?.message ?? ''}
-        confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
-        onConfirm={confirmDialog?.onConfirm ?? handleCancelConfirm}
-        onCancel={handleCancelConfirm}
-      />
+      <CommandPalette />
+      <SearchDialog />
+      <ConfirmDialog />
     </div>
   )
 }

@@ -19,6 +19,15 @@ export interface ReadingPosition {
 export const MIN_WPM = 80
 export const MAX_WPM = 600
 
+/** Ephemeral (not persisted) — drives the single global confirm dialog so
+ * any component can request one without prop-drilling through App.tsx. */
+export interface ConfirmDialogRequest {
+  title: string
+  message: string
+  confirmLabel: string
+  onConfirm: () => void
+}
+
 export interface ReaderState {
   book: Book | null
   position: ReadingPosition
@@ -37,6 +46,7 @@ export interface ReaderState {
   library: LibraryEntry[]
   /** Persisted (localStorage) — which book to auto-reopen on next load. */
   lastOpenedBookId: string | null
+  confirmDialog: ConfirmDialogRequest | null
 }
 
 export interface ReaderActions {
@@ -80,6 +90,9 @@ export interface ReaderActions {
 
   toggleSpeech: () => void
   setSpeechEnabled: (enabled: boolean) => void
+
+  requestConfirm: (request: ConfirmDialogRequest) => void
+  cancelConfirmDialog: () => void
 }
 
 export type ReaderStore = ReaderState & ReaderActions

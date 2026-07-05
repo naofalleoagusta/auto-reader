@@ -25,6 +25,7 @@ export const useReaderState = create<ReaderStore>()(
       isSpeechEnabled: true,
       library: [],
       lastOpenedBookId: null,
+      confirmDialog: null,
 
       loadBook: (book) =>
         set({
@@ -157,6 +158,9 @@ export const useReaderState = create<ReaderStore>()(
 
       toggleSpeech: () => set((s) => ({ isSpeechEnabled: !s.isSpeechEnabled })),
       setSpeechEnabled: (isSpeechEnabled) => set({ isSpeechEnabled }),
+
+      requestConfirm: (confirmDialog) => set({ confirmDialog }),
+      cancelConfirmDialog: () => set({ confirmDialog: null }),
     }),
     {
       name: 'auto-reader-settings',

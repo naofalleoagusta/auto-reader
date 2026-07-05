@@ -1,43 +1,32 @@
-import { memo } from 'react'
+import { useReaderState } from '../state/useReaderState'
 import { MAX_WPM, MIN_WPM } from '../types/reader'
-
-interface ControlBarProps {
-  isReading: boolean
-  onTogglePlay: () => void
-  readingSpeedWpm: number
-  onSpeedChange: (wpm: number) => void
-  onSkipPrev: () => void
-  onSkipNext: () => void
-  onOpenCommandPalette: () => void
-  onOpenSearch: () => void
-  onToggleSidebar: () => void
-  isSpeechEnabled: boolean
-  onToggleSpeech: () => void
-  chapterProgress: { chapterIndex: number; totalChapters: number }
-  blockProgress: { blockIndex: number; totalBlocks: number }
-}
 
 const TEMPO_TICKS = 24
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60'
 
-export const ControlBar = memo(function ControlBar({
-  isReading,
-  onTogglePlay,
-  readingSpeedWpm,
-  onSpeedChange,
-  onSkipPrev,
-  onSkipNext,
-  onOpenCommandPalette,
-  onOpenSearch,
-  onToggleSidebar,
-  isSpeechEnabled,
-  onToggleSpeech,
-  chapterProgress,
-  blockProgress,
-}: ControlBarProps) {
-  const blockPercent =
-    blockProgress.totalBlocks > 0 ? ((blockProgress.blockIndex + 1) / blockProgress.totalBlocks) * 100 : 0
+export function ControlBar() {
+  const isReading = useReaderState((s) => s.isReading)
+  const readingSpeedWpm = useReaderState((s) => s.readingSpeedWpm)
+  const isSpeechEnabled = useReaderState((s) => s.isSpeechEnabled)
+  const book = useReaderState((s) => s.book)
+  const position = useReaderState((s) => s.position)
+  const togglePlay = useReaderState((s) => s.togglePlay)
+  const setSpeed = useReaderState((s) => s.setSpeed)
+  const prevBlock = useReaderState((s) => s.prevBlock)
+  const nextBlock = useReaderState((s) => s.nextBlock)
+  const toggleSidebar = useReaderState((s) => s.toggleSidebar)
+  const toggleSpeech = useReaderState((s) => s.toggleSpeech)
+  const setCommandPaletteOpen = useReaderState((s) => s.setCommandPaletteOpen)
+  const setSearchOpen = useReaderState((s) => s.setSearchOpen)
+
+  const chapter = book?.chapters[position.chapterIndex]
+  const totalChapters = book?.chapters.length ?? 0
+  const totalBlocks = chapter?.blocks.length ?? 0
+  const blockPercent = totalBlocks > 0 ? ((position.blockIndex + 1) / totalBlocks) * 100 : 0
   const speedPercent = ((readingSpeedWpm - MIN_WPM) / (MAX_WPM - MIN_WPM)) * 100
+
+  const onOpenCommandPalette = () => setCommandPaletteOpen(true)
+  const onOpenSearch = () => setSearchOpen(true)
 
   return (
     <div className="flex flex-col gap-3 border-t border-line bg-surface px-3 py-3 font-mono sm:px-6">
@@ -48,7 +37,7 @@ export const ControlBar = memo(function ControlBar({
       <div className="flex items-center justify-between gap-2 sm:gap-4">
         <button
           type="button"
-          onClick={onToggleSidebar}
+          onClick={toggleSidebar}
           className={`flex h-11 w-11 items-center justify-center text-muted transition-colors hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           aria-label="Toggle sidebar"
         >
@@ -72,7 +61,7 @@ export const ControlBar = memo(function ControlBar({
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={onSkipPrev}
+            onClick={prevBlock}
             aria-label="Previous paragraph"
             className={`flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           >
@@ -81,7 +70,7 @@ export const ControlBar = memo(function ControlBar({
 
           <button
             type="button"
-            onClick={onTogglePlay}
+            onClick={togglePlay}
             aria-label={isReading ? 'Pause' : 'Play'}
             className={`flex h-11 w-12 items-center justify-center border border-accent text-sm text-accent transition-colors hover:bg-accent hover:text-canvas sm:h-8 sm:w-12 ${FOCUS_RING}`}
           >
@@ -90,7 +79,7 @@ export const ControlBar = memo(function ControlBar({
 
           <button
             type="button"
-            onClick={onSkipNext}
+            onClick={nextBlock}
             aria-label="Next paragraph"
             className={`flex h-11 w-11 items-center justify-center border border-transparent text-sm text-muted transition-colors hover:border-line hover:text-ink sm:h-8 sm:w-8 ${FOCUS_RING}`}
           >
@@ -101,7 +90,7 @@ export const ControlBar = memo(function ControlBar({
         <div className="flex items-center gap-1.5 sm:gap-4">
           <button
             type="button"
-            onClick={onToggleSpeech}
+            onClick={toggleSpeech}
             aria-label={isSpeechEnabled ? 'Mute narration' : 'Unmute narration'}
             aria-pressed={isSpeechEnabled}
             className={`flex h-11 w-11 items-center justify-center transition-colors sm:h-8 sm:w-8 ${FOCUS_RING} ${isSpeechEnabled ? 'text-accent' : 'text-muted hover:text-ink'}`}
@@ -131,7 +120,7 @@ export const ControlBar = memo(function ControlBar({
           <div className="hidden items-center gap-2 sm:flex">
             <button
               type="button"
-              onClick={() => onSpeedChange(readingSpeedWpm - 10)}
+              onClick={() => setSpeed(readingSpeedWpm - 10)}
               className={`text-muted transition-colors hover:text-ink ${FOCUS_RING}`}
               aria-label="Decrease speed"
             >
@@ -156,7 +145,7 @@ export const ControlBar = memo(function ControlBar({
 
             <button
               type="button"
-              onClick={() => onSpeedChange(readingSpeedWpm + 10)}
+              onClick={() => setSpeed(readingSpeedWpm + 10)}
               className={`text-muted transition-colors hover:text-ink ${FOCUS_RING}`}
               aria-label="Increase speed"
             >
@@ -165,8 +154,7 @@ export const ControlBar = memo(function ControlBar({
           </div>
 
           <span className="hidden text-[11px] tabular-nums text-muted md:inline">
-            {String(chapterProgress.chapterIndex + 1).padStart(2, '0')}/
-            {String(chapterProgress.totalChapters).padStart(2, '0')}
+            {String(position.chapterIndex + 1).padStart(2, '0')}/{String(totalChapters).padStart(2, '0')}
           </span>
 
           <button
@@ -180,4 +168,4 @@ export const ControlBar = memo(function ControlBar({
       </div>
     </div>
   )
-})
+}

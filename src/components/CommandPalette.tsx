@@ -1,18 +1,5 @@
-import { memo } from 'react'
-import type { FontFamilyOption, FontSettings, ThemeMode } from '../types/reader'
-
-interface CommandPaletteProps {
-  isOpen: boolean
-  onClose: () => void
-  theme: ThemeMode
-  onThemeChange: (theme: ThemeMode) => void
-  font: FontSettings
-  onFontFamilyChange: (family: FontFamilyOption) => void
-  onFontSizeChange: (size: number) => void
-  onLineHeightChange: (lineHeight: number) => void
-  readingSpeedWpm: number
-  onSpeedChange: (wpm: number) => void
-}
+import { useReaderState } from '../state/useReaderState'
+import type { ThemeMode } from '../types/reader'
 
 const THEMES: { value: ThemeMode; label: string }[] = [
   { value: 'light', label: 'LIGHT' },
@@ -22,19 +9,21 @@ const THEMES: { value: ThemeMode; label: string }[] = [
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60'
 
-export const CommandPalette = memo(function CommandPalette({
-  isOpen,
-  onClose,
-  theme,
-  onThemeChange,
-  font,
-  onFontFamilyChange,
-  onFontSizeChange,
-  onLineHeightChange,
-  readingSpeedWpm,
-  onSpeedChange,
-}: CommandPaletteProps) {
+export function CommandPalette() {
+  const isOpen = useReaderState((s) => s.isCommandPaletteOpen)
+  const theme = useReaderState((s) => s.theme)
+  const font = useReaderState((s) => s.font)
+  const readingSpeedWpm = useReaderState((s) => s.readingSpeedWpm)
+  const setCommandPaletteOpen = useReaderState((s) => s.setCommandPaletteOpen)
+  const setTheme = useReaderState((s) => s.setTheme)
+  const setFontFamily = useReaderState((s) => s.setFontFamily)
+  const setFontSize = useReaderState((s) => s.setFontSize)
+  const setLineHeight = useReaderState((s) => s.setLineHeight)
+  const setSpeed = useReaderState((s) => s.setSpeed)
+
   if (!isOpen) return null
+
+  const onClose = () => setCommandPaletteOpen(false)
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 pt-[15vh]" onClick={onClose}>
@@ -54,7 +43,7 @@ export const CommandPalette = memo(function CommandPalette({
               <button
                 key={value}
                 type="button"
-                onClick={() => onThemeChange(value)}
+                onClick={() => setTheme(value)}
                 className={`border px-2 py-2 text-[11px] tracking-wider transition-colors ${FOCUS_RING} ${
                   theme === value
                     ? 'border-accent text-accent'
@@ -74,7 +63,7 @@ export const CommandPalette = memo(function CommandPalette({
               <button
                 key={option}
                 type="button"
-                onClick={() => onFontFamilyChange(option)}
+                onClick={() => setFontFamily(option)}
                 className={`border px-2 py-2 text-[11px] tracking-wider uppercase transition-colors ${FOCUS_RING} ${
                   font.fontFamily === option
                     ? 'border-accent text-accent'
@@ -95,7 +84,7 @@ export const CommandPalette = memo(function CommandPalette({
               min={14}
               max={28}
               value={font.fontSize}
-              onChange={(e) => onFontSizeChange(Number(e.target.value))}
+              onChange={(e) => setFontSize(Number(e.target.value))}
               className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
@@ -107,7 +96,7 @@ export const CommandPalette = memo(function CommandPalette({
               max={2}
               step={0.1}
               value={font.lineHeight}
-              onChange={(e) => onLineHeightChange(Number(e.target.value))}
+              onChange={(e) => setLineHeight(Number(e.target.value))}
               className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
@@ -119,7 +108,7 @@ export const CommandPalette = memo(function CommandPalette({
               max={600}
               step={10}
               value={readingSpeedWpm}
-              onChange={(e) => onSpeedChange(Number(e.target.value))}
+              onChange={(e) => setSpeed(Number(e.target.value))}
               className={`accent-[var(--color-accent)] ${FOCUS_RING}`}
             />
           </label>
@@ -127,4 +116,4 @@ export const CommandPalette = memo(function CommandPalette({
       </div>
     </div>
   )
-})
+}

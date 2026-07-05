@@ -1,31 +1,45 @@
-import { memo } from 'react'
-import type { Book, LibraryEntry } from '../types/book'
+import { useReaderState } from '../state/useReaderState'
 
 interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-  book: Book | null
-  currentChapterIndex: number
-  onSelectChapter: (chapterIndex: number) => void
   onRequestOpenFile: () => void
-  library: LibraryEntry[]
-  onSelectLibraryBook: (id: string) => void
-  onDeleteLibraryBook: (id: string) => void
-  onClearLibrary: () => void
 }
 
-export const Sidebar = memo(function Sidebar({
-  isOpen,
-  onClose,
-  book,
-  currentChapterIndex,
-  onSelectChapter,
-  onRequestOpenFile,
-  library,
-  onSelectLibraryBook,
-  onDeleteLibraryBook,
-  onClearLibrary,
-}: SidebarProps) {
+export function Sidebar({ onRequestOpenFile }: SidebarProps) {
+  const isOpen = useReaderState((s) => s.isSidebarOpen)
+  const book = useReaderState((s) => s.book)
+  const currentChapterIndex = useReaderState((s) => s.position.chapterIndex)
+  const library = useReaderState((s) => s.library)
+  const setSidebarOpen = useReaderState((s) => s.setSidebarOpen)
+  const setPosition = useReaderState((s) => s.setPosition)
+  const openBookFromLibrary = useReaderState((s) => s.openBookFromLibrary)
+  const removeBook = useReaderState((s) => s.removeBook)
+  const clearLibrary = useReaderState((s) => s.clearLibrary)
+  const requestConfirm = useReaderState((s) => s.requestConfirm)
+
+  const onClose = () => setSidebarOpen(false)
+  const onSelectChapter = (chapterIndex: number) => setPosition({ chapterIndex, blockIndex: 0 })
+  const onSelectLibraryBook = (id: string) => {
+    void openBookFromLibrary(id)
+    setSidebarOpen(true)
+  }
+  const onDeleteLibraryBook = (id: string) => {
+    const entry = library.find((e) => e.id === id)
+    requestConfirm({
+      title: 'Delete book',
+      message: `Delete "${entry?.title ?? 'this book'}"? This can't be undone.`,
+      confirmLabel: 'Delete',
+      onConfirm: () => void removeBook(id),
+    })
+  }
+  const onClearLibrary = () => {
+    requestConfirm({
+      title: 'Clear library',
+      message: "Delete all saved books? This can't be undone.",
+      confirmLabel: 'Delete all',
+      onConfirm: () => void clearLibrary(),
+    })
+  }
+
   return (
     <>
       <div
@@ -147,4 +161,4 @@ export const Sidebar = memo(function Sidebar({
       </aside>
     </>
   )
-})
+}
